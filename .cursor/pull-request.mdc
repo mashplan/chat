@@ -1,0 +1,160 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Pull Request Best Practices Guide
+
+## 1. Sync with Original Repository
+
+```bash
+# Add the original repository as "upstream" remote
+git remote add upstream <ORIGINAL_REPO_URL>
+
+# Sync your fork
+git fetch upstream
+git checkout main
+git merge upstream/main
+```
+
+## 2. Branch Management
+
+### Create a New Branch
+- Create a dedicated branch for each modification
+- Use descriptive naming
+
+### Naming Conventions
+- `feature/feature-name`
+- `fix/bug-name`
+- `docs/documentation-update`
+
+```bash
+git checkout -b feature/my-new-feature
+```
+
+## 3. Commits
+
+### Best Practices
+- Regular and atomic commits
+- Clear and descriptive messages
+
+### Message Format
+```
+type: short description
+
+Detailed description if needed
+```
+
+### Commit Types
+- `feat`: new feature
+- `fix`: bug fix
+- `docs`: documentation
+- `style`: formatting, missing semicolons, etc.
+- `refactor`: code refactoring
+- `test`: adding or modifying tests
+- `chore`: maintenance
+
+## 4. PR Preparation
+
+### Update Branch
+```bash
+git checkout main
+git pull upstream main
+git checkout feature/my-new-feature
+git rebase main
+```
+
+### Checklist
+- [x] Code complies with project standards
+- [x] Tests completed
+- [x] Branch up to date with original repository
+
+## 5. Creating the Pull Request
+
+### Push Changes
+```bash
+git push origin feature/my-new-feature
+```
+
+### PR Content
+- **Title**: Clear and descriptive
+- **Description**:
+  - Purpose of changes
+  - Testing instructions
+  - Screenshots (if relevant)
+  - Issue references (#number)
+
+## 6. PR Follow-up
+
+### Review Process
+1. Respond to comments
+2. Make requested changes
+3. Push new commits
+4. Wait for approval
+
+## 7. Post-merge
+
+### Cleanup
+```bash
+git checkout main
+git pull upstream main
+git branch -d feature/my-new-feature
+```
+
+## Additional Best Practices
+
+### Do's
+- ✅ Check contribution guidelines
+- ✅ Verify for similar PRs
+- ✅ Keep PR size reasonable
+- ✅ Be responsive to feedback
+- ✅ Document changes
+- ✅ Add tests if needed
+
+### Don'ts
+- ❌ Oversized PRs
+- ❌ Non-atomic commits
+- ❌ Vague commit messages
+- ❌ Ignore project standards
+
+## Tips for a Successful PR
+
+1. **Communication**
+   - Be clear and concise
+   - Explain technical choices
+   - Stay professional and courteous
+
+2. **Organization**
+   - One PR = One feature
+   - Logical and ordered commits
+   - Up-to-date documentation
+
+3. **Quality**
+   - Clean and tested code
+   - Follow conventions
+   - No conflicts with main branch
+
+## Common PR Workflow
+
+1. Fork the repository
+2. Clone your fork locally
+3. Create a new branch
+4. Make your changes
+5. Commit with clear messages
+6. Push to your fork
+7. Create PR
+8. Address review comments
+9. Get approval
+10. Merge
+11. Clean up
+
+Remember:
+- Keep changes focused and minimal
+- Follow project guidelines
+- Test thoroughly
+- Document your changes
+- Be patient and responsive during review
+- Learn from feedback
+- Keep your fork updated
+
+This structured approach helps maintainers review your contribution efficiently and increases the chances of your PR being accepted quickly. 

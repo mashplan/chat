@@ -1,0 +1,57 @@
+---
+description: project context
+globs: 
+alwaysApply: true
+---
+# Project context
+This is a fork project from a template provided by Vercel : chat SDK/
+
+Chat SDK is a free, open-source template built with Next.js and the AI SDK that helps you quickly build powerful chatbot applications.
+
+# Technical Stack
+- NextJS, 
+- next-intl, 
+- Vercel AI SDK, 
+- Support multiple LLM
+- Lucid, 
+- Shadcn, 
+- TailwindCSS, 
+- Lucide-react, 
+- HTML, 
+- CSS. 
+
+Do not use any other libraries or frameworks unless it's explicitly required. 
+Ask me an approval before using any other library or framework.
+
+Deployed on Vercel or as a docker container.
+
+# Git Usage
+Commit messages prefix should be:
+- [FEAT] for new features
+- [FIX] for bug fixes
+- [DOC] for documentation
+- [REFACTOR] for code refactoring
+- [STYLE] for code style changes
+- [PERF] for performance improvements
+- [TEST] for adding or modifying tests
+- [CHORE] for other changes that don't modify src or test files
+
+Rules : 
+- Commit messages should be in English.
+- Commit messages should be clear and concise.
+- Use lowercase for commit messages.
+- Keep commit messages short and to the point.
+- Include description for non-trivial changes.
+
+# Documentation
+
+- Use Markdown to write documentation.
+- Maintain the README.md file up to date with the latest information.
+- Add comments to all components, functions, hooks, types, utils, etc.
+- Add comments for complex logic.
+
+# Dependencies
+- Use pnpm as the package manager.
+
+
+
