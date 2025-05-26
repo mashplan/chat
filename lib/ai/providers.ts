@@ -33,6 +33,6 @@ export const myProvider = isTestEnvironment
         'artifact-model': anthropic('claude-sonnet-4-20250514'),
       },
       imageModels: {
-        'small-model': openai.image('gpt-image-1'),
+        'small-model': openai.image('dall-e-3'),
       },
     });
