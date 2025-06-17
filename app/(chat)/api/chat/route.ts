@@ -118,6 +118,31 @@ export async function POST(request: Request) {
       message,
     });
 
+    console.log('📜 Conversation History Debug:', {
+      previousMessagesCount: previousMessages.length,
+      previousMessages: previousMessages.map((msg) => ({
+        id: msg.id,
+        role: msg.role,
+        partsCount: Array.isArray(msg.parts) ? msg.parts.length : 0,
+        firstPartPreview:
+          Array.isArray(msg.parts) &&
+          msg.parts.length > 0 &&
+          msg.parts[0].type === 'text'
+            ? `${msg.parts[0].text.substring(0, 100)}...`
+            : 'no text content',
+        createdAt: msg.createdAt,
+      })),
+      finalMessagesCount: messages.length,
+      finalMessages: messages.map((msg) => ({
+        id: msg.id,
+        role: msg.role,
+        content:
+          typeof msg.content === 'string'
+            ? `${msg.content.substring(0, 100)}...`
+            : 'complex content',
+      })),
+    });
+
     const { longitude, latitude, city, country } = geolocation(request);
 
     const requestHints: RequestHints = {
@@ -172,14 +197,50 @@ export async function POST(request: Request) {
             }),
             generateImageTool,
           },
-          onFinish: async ({ response, text }) => {
+          onFinish: async ({
+            response,
+            text,
+            reasoning,
+            finishReason,
+            usage,
+          }) => {
+            console.log('🏁 OnFinish Debug:', {
+              hasUser: !!session.user?.id,
+              textLength: text?.length || 0,
+              textContent: text ? `"${text.substring(0, 200)}..."` : 'NO TEXT',
+              reasoningLength: reasoning?.length || 0,
+              finishReason,
+              usage,
+              responseId: response.id,
+              messageCount: response.messages.length,
+            });
+
             if (session.user?.id) {
               try {
                 // For reasoning models, use the text parameter directly
                 if (!text || text.trim().length === 0) {
+                  console.log('⚠️ Skipping save: No text content available');
+                  console.log('🔍 Available response data:', {
+                    text: text,
+                    reasoning: reasoning?.substring(0, 100),
+                    responseMessages: response.messages.map((msg) => ({
+                      role: msg.role,
+                      contentType: typeof msg.content,
+                      contentPreview:
+                        typeof msg.content === 'string'
+                          ? msg.content.substring(0, 100)
+                          : Array.isArray(msg.content)
+                            ? msg.content.map(
+                                (part) =>
+                                  `${part.type}: ${JSON.stringify(part).substring(0, 50)}`,
+                              )
+                            : 'unknown',
+                    })),
+                  });
                   return; // Skip saving if no content
                 }
 
+                console.log('💾 Attempting to save assistant message...');
                 const assistantId = generateUUID();
                 await saveMessages({
                   messages: [
@@ -198,9 +259,15 @@ export async function POST(request: Request) {
                     },
                   ],
                 });
+                console.log(
+                  '✅ Assistant message saved successfully with ID:',
+                  assistantId,
+                );
               } catch (error) {
-                console.error('Failed to save chat:', error);
+                console.error('❌ Failed to save chat:', error);
               }
+            } else {
+              console.log('⚠️ No user session, skipping save');
             }
           },
           experimental_telemetry: {
