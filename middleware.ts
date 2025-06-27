@@ -13,6 +13,11 @@ export async function middleware(request: NextRequest) {
     return new Response('pong', { status: 200 });
   }
 
+  // Allow health check endpoint for Scaleway health checks
+  if (pathname.startsWith('/api/health')) {
+    return NextResponse.next();
+  }
+
   if (pathname.startsWith('/api/auth')) {
     return NextResponse.next();
   }
@@ -25,16 +30,23 @@ export async function middleware(request: NextRequest) {
 
   if (!token) {
     const redirectUrl = encodeURIComponent(request.url);
+    // Use the actual request host for redirects
+    const protocol = request.nextUrl.protocol;
+    const host = request.headers.get('host') || request.nextUrl.host;
+    const baseUrl = `${protocol}//${host}`;
 
     return NextResponse.redirect(
-      new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, request.url),
+      new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, baseUrl),
     );
   }
 
   const isGuest = guestRegex.test(token?.email ?? '');
 
   if (token && !isGuest && ['/login', '/register'].includes(pathname)) {
-    return NextResponse.redirect(new URL('/', request.url));
+    const protocol = request.nextUrl.protocol;
+    const host = request.headers.get('host') || request.nextUrl.host;
+    const baseUrl = `${protocol}//${host}`;
+    return NextResponse.redirect(new URL('/', baseUrl));
   }
 
   return NextResponse.next();
