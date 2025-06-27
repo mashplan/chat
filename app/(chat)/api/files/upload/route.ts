@@ -1,8 +1,8 @@
-import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { auth } from '@/app/(auth)/auth';
+import { uploadFile } from '@/lib/storage/scaleway';
 
 // Use Blob instead of File since File is not available in Node.js environment
 const FileSchema = z.object({
@@ -12,9 +12,20 @@ const FileSchema = z.object({
       message: 'File size should be less than 5MB',
     })
     // Update the file type based on the kind of files you want to accept
-    .refine((file) => ['image/jpeg', 'image/png'].includes(file.type), {
-      message: 'File type should be JPEG or PNG',
-    }),
+    .refine(
+      (file) =>
+        [
+          'image/jpeg',
+          'image/png',
+          'image/gif',
+          'image/webp',
+          'text/plain',
+          'application/pdf',
+        ].includes(file.type),
+      {
+        message: 'File type should be JPEG, PNG, GIF, WebP, PDF, or text file',
+      },
+    ),
 });
 
 export async function POST(request: Request) {
@@ -48,18 +59,23 @@ export async function POST(request: Request) {
 
     // Get filename from formData since Blob doesn't have name property
     const filename = (formData.get('file') as File).name;
-    const fileBuffer = await file.arrayBuffer();
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
 
     try {
-      const data = await put(`${filename}`, fileBuffer, {
-        access: 'public',
-      });
+      const uploadResult = await uploadFile(fileBuffer, filename, file.type);
 
-      return NextResponse.json(data);
+      return NextResponse.json({
+        url: uploadResult.url,
+        pathname: uploadResult.pathname,
+        contentType: uploadResult.contentType,
+        size: uploadResult.size,
+      });
     } catch (error) {
+      console.error('Upload error:', error);
       return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
     }
   } catch (error) {
+    console.error('Request processing error:', error);
     return NextResponse.json(
       { error: 'Failed to process request' },
       { status: 500 },

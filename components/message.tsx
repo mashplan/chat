@@ -212,6 +212,28 @@ const PurePreviewMessage = ({
                           result={result}
                           isReadonly={isReadonly}
                         />
+                      ) : toolName === 'generateImageTool' ? (
+                        result.success ? (
+                          <div className="border rounded-xl p-4 max-w-md">
+                            <img
+                              src={result.imageUrl}
+                              alt={result.prompt}
+                              className="w-full h-auto rounded-lg"
+                            />
+                            <p className="text-sm text-muted-foreground mt-2">
+                              {result.prompt}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Size: {result.size}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="border border-red-200 rounded-xl p-4 max-w-md bg-red-50 dark:bg-red-950/20">
+                            <p className="text-red-600 dark:text-red-400">
+                              {result.error}
+                            </p>
+                          </div>
+                        )
                       ) : (
                         <pre>{JSON.stringify(result, null, 2)}</pre>
                       )}

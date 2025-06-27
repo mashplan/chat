@@ -1,6 +1,5 @@
 import {
   appendClientMessage,
-  appendResponseMessages,
   createDataStream,
   smoothStream,
   streamText,
@@ -8,7 +7,6 @@ import {
 import { auth, type UserType } from '@/app/(auth)/auth';
 import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
 import {
-  createStreamId,
   deleteChatById,
   getChatById,
   getMessageCountByUserId,
@@ -17,16 +15,17 @@ import {
   saveChat,
   saveMessages,
 } from '@/lib/db/queries';
-import { generateUUID, getTrailingMessageId } from '@/lib/utils';
+import { generateUUID } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
 import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
+import { generateImageTool } from '@/lib/ai/tools/generate-image';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
-import { postRequestBodySchema, type PostRequestBody } from './schema';
+import type { PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
 import {
   createResumableStreamContext,
@@ -48,12 +47,17 @@ function getStreamContext() {
         waitUntil: after,
       });
     } catch (error: any) {
-      if (error.message.includes('REDIS_URL')) {
+      if (
+        error.message.includes('REDIS_URL') ||
+        error.code === 'ERR_INVALID_URL'
+      ) {
         console.log(
-          ' > Resumable streams are disabled due to missing REDIS_URL',
+          ' > Resumable streams are disabled due to missing or invalid REDIS_URL',
         );
+        return null;
       } else {
-        console.error(error);
+        console.error('Resumable stream context error:', error);
+        return null;
       }
     }
   }
@@ -62,18 +66,13 @@ function getStreamContext() {
 }
 
 export async function POST(request: Request) {
-  let requestBody: PostRequestBody;
-
   try {
-    const json = await request.json();
-    requestBody = postRequestBodySchema.parse(json);
-  } catch (_) {
-    return new ChatSDKError('bad_request:api').toResponse();
-  }
-
-  try {
-    const { id, message, selectedChatModel, selectedVisibilityType } =
-      requestBody;
+    const {
+      id,
+      message,
+      selectedChatModel,
+      selectedVisibilityType,
+    }: PostRequestBody = await request.json();
 
     const session = await auth();
 
@@ -141,8 +140,7 @@ export async function POST(request: Request) {
       ],
     });
 
-    const streamId = generateUUID();
-    await createStreamId({ streamId, chatId: id });
+    const streamId = `${id}-${generateUUID()}`;
 
     const stream = createDataStream({
       execute: (dataStream) => {
@@ -152,13 +150,15 @@ export async function POST(request: Request) {
           messages,
           maxSteps: 5,
           experimental_activeTools:
-            selectedChatModel === 'chat-model-reasoning'
+            selectedChatModel === 'chat-model-reasoning' ||
+            selectedChatModel === 'deepseek-r1'
               ? []
               : [
                   'getWeather',
                   'createDocument',
                   'updateDocument',
                   'requestSuggestions',
+                  'generateImageTool',
                 ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
@@ -170,40 +170,42 @@ export async function POST(request: Request) {
               session,
               dataStream,
             }),
+            generateImageTool,
           },
-          onFinish: async ({ response }) => {
+          onFinish: async ({
+            response,
+            text,
+            reasoning,
+            finishReason,
+            usage,
+          }) => {
             if (session.user?.id) {
               try {
-                const assistantId = getTrailingMessageId({
-                  messages: response.messages.filter(
-                    (message) => message.role === 'assistant',
-                  ),
-                });
-
-                if (!assistantId) {
-                  throw new Error('No assistant message found!');
+                // For reasoning models, use the text parameter directly
+                if (!text || text.trim().length === 0) {
+                  return; // Skip saving if no content
                 }
 
-                const [, assistantMessage] = appendResponseMessages({
-                  messages: [message],
-                  responseMessages: response.messages,
-                });
-
+                const assistantId = generateUUID();
                 await saveMessages({
                   messages: [
                     {
                       id: assistantId,
                       chatId: id,
-                      role: assistantMessage.role,
-                      parts: assistantMessage.parts,
-                      attachments:
-                        assistantMessage.experimental_attachments ?? [],
+                      role: 'assistant',
+                      parts: [
+                        {
+                          type: 'text',
+                          text: text,
+                        },
+                      ],
+                      attachments: [],
                       createdAt: new Date(),
                     },
                   ],
                 });
-              } catch (_) {
-                console.error('Failed to save chat');
+              } catch (error) {
+                console.error('Failed to save chat:', error);
               }
             }
           },
@@ -219,7 +221,8 @@ export async function POST(request: Request) {
           sendReasoning: true,
         });
       },
-      onError: () => {
+      onError: (error) => {
+        console.error('DataStream error:', error);
         return 'Oops, an error occurred!';
       },
     });

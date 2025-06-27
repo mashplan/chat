@@ -38,6 +38,22 @@
 
 This template ships with [xAI](https://x.ai) `grok-2-1212` as the default chat model. However, with the [AI SDK](https://sdk.vercel.ai/docs), you can switch LLM providers to [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://sdk.vercel.ai/providers/ai-sdk-providers) with just a few lines of code.
 
+### Berget AI Integration
+
+This application includes integration with [Berget AI](https://api.berget.ai/) which provides access to DeepSeek models including:
+- **DeepSeek R1**: Advanced reasoning model excellent for mathematics, coding, and complex problem-solving
+- **DeepSeek Chat**: General-purpose conversational AI model
+
+To use Berget AI models:
+1. Sign up for an account at [Berget AI](https://api.berget.ai/)
+2. Get your API key from the dashboard
+3. Add it to your environment variables:
+   ```env
+   BERGET_AI_API_KEY=your_berget_ai_api_key_here
+   ```
+
+The models will automatically become available in the chat interface once configured.
+
 ## Deploy Your Own
 
 You can deploy your own version of the Next.js AI Chatbot to Vercel with one click:
