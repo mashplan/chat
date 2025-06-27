@@ -8,11 +8,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Validate required environment variables
 const requiredEnvVars = {
-  accessKeyId: process.env.SCALEWAY_ACCESS_KEY_ID,
-  secretAccessKey: process.env.SCALEWAY_SECRET_ACCESS_KEY,
-  bucketName: process.env.SCALEWAY_BUCKET_NAME,
-  region: process.env.SCALEWAY_REGION || 'nl-ams',
-  endpoint: process.env.SCALEWAY_ENDPOINT || 'https://s3.nl-ams.scw.cloud',
+  accessKeyId: process.env.SCALEWAY_OS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.SCALEWAY_OS_SECRET_ACCESS_KEY,
+  bucketName: process.env.SCALEWAY_OS_BUCKET_NAME,
+  region: process.env.SCALEWAY_OS_REGION || 'nl-ams',
+  endpoint: process.env.SCALEWAY_OS_ENDPOINT || 'https://s3.nl-ams.scw.cloud',
 };
 
 if (
@@ -21,7 +21,7 @@ if (
   !requiredEnvVars.bucketName
 ) {
   throw new Error(
-    'Missing required Scaleway environment variables: SCALEWAY_ACCESS_KEY_ID, SCALEWAY_SECRET_ACCESS_KEY, SCALEWAY_BUCKET_NAME',
+    'Missing required Scaleway environment variables: SCALEWAY_OS_ACCESS_KEY_ID, SCALEWAY_OS_SECRET_ACCESS_KEY, SCALEWAY_OS_BUCKET_NAME',
   );
 }
 
