@@ -28,61 +28,22 @@ jobs:
         username: nologin
         password: ${{ secrets.SCW_SECRET_KEY }}
 
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY_ENDPOINT }}/${{ secrets.SCW_REGISTRY_NAMESPACE }}/${{ env.IMAGE_NAME }}
-        tags: |
-          type=ref,event=branch
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
-
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: .
         push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        tags: ${{ env.REGISTRY_ENDPOINT }}/${{ secrets.SCW_REGISTRY_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
         platforms: linux/amd64
 
-    - name: Install Scaleway CLI
-      run: |
-        # Download Scaleway CLI directly
-        wget -O scw https://github.com/scaleway/scaleway-cli/releases/latest/download/scaleway-cli_linux_amd64
-        chmod +x scw
-        sudo mv scw /usr/local/bin/scw
-        
-        # Verify installation
-        scw version
-        
-        # Configure Scaleway CLI
-        scw config set access-key=${{ secrets.SCW_ACCESS_KEY }}
-        scw config set secret-key=${{ secrets.SCW_SECRET_KEY }}
-        scw config set default-organization-id=${{ secrets.SCW_ORGANIZATION_ID }}
-        scw config set default-project-id=${{ secrets.SCW_PROJECT_ID }}
-        scw config set default-region=${{ env.REGION }}
-
-    - name: Update container registry image
-      run: |
-        # Update the container to use the new image
-        scw container container update ${{ secrets.SCW_CONTAINER_ID }} \
-          registry-image=${{ env.REGISTRY_ENDPOINT }}/${{ secrets.SCW_REGISTRY_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
-
-    - name: Deploy to Scaleway Serverless Containers
-      run: |
-        # Deploy the updated container
-        scw container container deploy ${{ secrets.SCW_CONTAINER_ID }}
-        
-        # Wait for deployment to complete
-        echo "Waiting for deployment to complete..."
-        scw container container wait ${{ secrets.SCW_CONTAINER_ID }}
-        
-        # Get container status and URL
-        scw container container get ${{ secrets.SCW_CONTAINER_ID }}
+    - name: Deploy to Scaleway Serverless Container
+      uses: httptoolkit/deploy-scaleway-serverless-container-action@v1
+      with:
+        container_id: ${{ secrets.SCW_CONTAINER_ID }}
+        secret_key: ${{ secrets.SCW_SECRET_KEY }}
+        registry_image_url: ${{ env.REGISTRY_ENDPOINT }}/${{ secrets.SCW_REGISTRY_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
+        region: ${{ env.REGION }}
+        timeout_seconds: 300
 
     - name: Deployment Summary
       run: |
