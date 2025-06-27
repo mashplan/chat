@@ -51,33 +51,37 @@ jobs:
 
     - name: Install Scaleway CLI
       run: |
-        curl -o /tmp/scw -L "https://github.com/scaleway/scaleway-cli/releases/latest/download/scaleway-cli_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/')"
-        chmod +x /tmp/scw
+        # Download and install Scaleway CLI using the official installation script
+        curl -s https://raw.githubusercontent.com/scaleway/scaleway-cli/master/scripts/get.sh | sh
+        sudo mv ./scw /usr/local/bin/scw
+        
+        # Verify installation
+        scw version
         
         # Configure Scaleway CLI
-        /tmp/scw config set access-key=${{ secrets.SCW_ACCESS_KEY }}
-        /tmp/scw config set secret-key=${{ secrets.SCW_SECRET_KEY }}
-        /tmp/scw config set default-organization-id=${{ secrets.SCW_ORGANIZATION_ID }}
-        /tmp/scw config set default-project-id=${{ secrets.SCW_PROJECT_ID }}
-        /tmp/scw config set default-region=${{ env.REGION }}
+        scw config set access-key=${{ secrets.SCW_ACCESS_KEY }}
+        scw config set secret-key=${{ secrets.SCW_SECRET_KEY }}
+        scw config set default-organization-id=${{ secrets.SCW_ORGANIZATION_ID }}
+        scw config set default-project-id=${{ secrets.SCW_PROJECT_ID }}
+        scw config set default-region=${{ env.REGION }}
 
     - name: Update container registry image
       run: |
         # Update the container to use the new image
-        /tmp/scw container container update ${{ secrets.SCW_CONTAINER_ID }} \
+        scw container container update ${{ secrets.SCW_CONTAINER_ID }} \
           registry-image=${{ env.REGISTRY_ENDPOINT }}/${{ secrets.SCW_REGISTRY_NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
 
     - name: Deploy to Scaleway Serverless Containers
       run: |
         # Deploy the updated container
-        /tmp/scw container container deploy ${{ secrets.SCW_CONTAINER_ID }}
+        scw container container deploy ${{ secrets.SCW_CONTAINER_ID }}
         
         # Wait for deployment to complete
         echo "Waiting for deployment to complete..."
-        /tmp/scw container container wait ${{ secrets.SCW_CONTAINER_ID }}
+        scw container container wait ${{ secrets.SCW_CONTAINER_ID }}
         
         # Get container status and URL
-        /tmp/scw container container get ${{ secrets.SCW_CONTAINER_ID }}
+        scw container container get ${{ secrets.SCW_CONTAINER_ID }}
 
     - name: Deployment Summary
       run: |
