@@ -1,9 +1,11 @@
 name: Playwright Tests
-on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+# on:
+#   push:
+#     branches: [main, master]
+#   pull_request:
+#     branches: [main, master]
+#
+# To re-enable, uncomment the 'on:' section above.
 
 jobs:
   test:

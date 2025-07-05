@@ -6,12 +6,22 @@ import { defineConfig, devices } from '@playwright/test';
  */
 import { config } from 'dotenv';
 
+// Load test environment variables
 config({
-  path: '.env.local',
+  path: process.env.CI ? '.env.test' : '.env.local',
 });
 
-/* Use process.env.PORT by default and fallback to port 3000 */
-const PORT = process.env.PORT || 3000;
+// Set test-specific environment variables
+if (!process.env.NEXTAUTH_URL)
+  process.env.NEXTAUTH_URL = 'http://localhost:3333';
+if (!process.env.AUTH_SECRET)
+  process.env.AUTH_SECRET = 'test-secret-for-playwright-tests-only';
+if (!process.env.NEXTAUTH_SECRET)
+  process.env.NEXTAUTH_SECRET = 'test-secret-for-playwright-tests-only';
+process.env.PLAYWRIGHT = 'true';
+
+/* Use process.env.PORT by default and fallback to port 3333 (matches dev script) */
+const PORT = process.env.PORT || 3333;
 
 /**
  * Set webServer.url and use.baseURL with the location
@@ -44,9 +54,9 @@ export default defineConfig({
   },
 
   /* Configure global timeout for each test */
-  timeout: 120 * 1000, // 120 seconds
+  timeout: 60 * 1000, // 60 seconds
   expect: {
-    timeout: 120 * 1000,
+    timeout: 30 * 1000, // 30 seconds for expectations
   },
 
   /* Configure projects */
@@ -100,8 +110,10 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'pnpm dev',
-    url: `${baseURL}/ping`,
-    timeout: 120 * 1000,
+    url: `${baseURL}/api/health`,
+    timeout: 60 * 1000, // 60 seconds to start the server
     reuseExistingServer: !process.env.CI,
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
 });
