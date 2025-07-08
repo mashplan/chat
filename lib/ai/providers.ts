@@ -3,15 +3,16 @@ import {
   extractReasoningMiddleware,
   wrapLanguageModel,
 } from 'ai';
+import { xai } from '@ai-sdk/xai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
-import { isTestEnvironment } from '../constants';
 import {
   artifactModel,
   chatModel,
   reasoningModel,
   titleModel,
 } from './models.test';
+import { isTestEnvironment } from '../constants';
 
 // Create OpenAI instance with explicit configuration
 const openaiProvider = createOpenAI({
