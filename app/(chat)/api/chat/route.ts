@@ -23,6 +23,7 @@ import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
+import { generateImageTool } from '@/lib/ai/tools/generate-image';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
@@ -176,6 +177,7 @@ export async function POST(request: Request) {
               session,
               dataStream,
             }),
+            generateImageTool,
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
@@ -204,7 +206,8 @@ export async function POST(request: Request) {
           })),
         });
       },
-      onError: () => {
+      onError: (error) => {
+        console.error('Stream error:', error);
         return 'Oops, an error occurred!';
       },
     });
@@ -218,12 +221,23 @@ export async function POST(request: Request) {
         ),
       );
     } else {
-      return new Response(stream);
+      return new Response(
+        stream.pipeThrough(new JsonToSseTransformStream()),
+      );
     }
   } catch (error) {
+    console.error('Chat route error:', error);
     if (error instanceof ChatSDKError) {
       return error.toResponse();
     }
+    // Return a proper error response for other errors
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'An error occurred' }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   }
 }
 

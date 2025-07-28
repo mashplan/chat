@@ -3,9 +3,9 @@ import {
   extractReasoningMiddleware,
   wrapLanguageModel,
 } from 'ai';
-import { xai } from '@ai-sdk/xai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import {
   artifactModel,
   chatModel,
@@ -17,7 +17,6 @@ import { isTestEnvironment } from '../constants';
 // Create OpenAI instance with explicit configuration
 const openaiProvider = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  compatibility: 'strict',
 });
 
 // Validate Berget AI API key
@@ -28,46 +27,75 @@ if (!isTestEnvironment && !process.env.BERGET_AI_API_KEY) {
 }
 
 // Berget AI provider configuration
-const bergetAiProvider = createOpenAI({
+let requestCounter = 0;
+const bergetAiProvider = createOpenAICompatible({
+  name: 'berget-ai',
   apiKey: process.env.BERGET_AI_API_KEY || 'dummy-key-for-tests',
   baseURL: 'https://api.berget.ai/v1',
-  compatibility: 'compatible',
-  fetch: async (url, options) => {
-    // Check if API key is missing
-    if (!process.env.BERGET_AI_API_KEY) {
-      throw new Error(
-        'BERGET_AI_API_KEY environment variable is required to use Berget AI models. ' +
-          'Please set your Berget AI API key in your environment variables.',
-      );
-    }
+  fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+    const requestId = ++requestCounter;
+    console.log(`\n=== Berget AI Request #${requestId} ===`);
+    const url = typeof input === 'string' ? input : input.toString();
+    console.log('URL:', url);
+    console.log('Headers:', init?.headers);
 
-    const response = await fetch(url, options);
+    // For Berget AI, always use non-streaming
+    if (init?.body && url.includes('berget.ai')) {
+      try {
+        const bodyStr =
+          typeof init.body === 'string'
+            ? init.body
+            : new TextDecoder().decode(init.body as Uint8Array);
 
-    // Log error details if request failed
-    if (!response.ok) {
-      const errorText = await response.text();
+        const bodyObj = JSON.parse(bodyStr);
+        console.log(`Request #${requestId} - Original stream:`, bodyObj.stream);
 
-      // Provide more helpful error messages
-      if (response.status === 401) {
-        throw new Error(
-          'Invalid Berget AI API key. Please check your BERGET_AI_API_KEY environment variable.',
+        // Force non-streaming
+        bodyObj.stream = false;
+
+        const modifiedInit = {
+          ...init,
+          body: JSON.stringify(bodyObj),
+        };
+
+        console.log(`Request #${requestId} - Making non-streaming request...`);
+        const response = await fetch(input, modifiedInit);
+        console.log(
+          `Request #${requestId} - Response status:`,
+          response.status,
         );
-      } else if (response.status === 403) {
-        throw new Error(
-          'Berget AI API access forbidden. Please check your API key permissions.',
+
+        // Clone response to read body
+        const responseText = await response.text();
+        console.log(
+          `Request #${requestId} - Response body preview:`,
+          responseText.substring(0, 200),
         );
-      } else if (response.status === 429) {
-        throw new Error(
-          'Berget AI API rate limit exceeded. Please try again later.',
+
+        // Create a new response with the text body
+        // This ensures the response can't be read as a stream
+        const newResponse = new Response(responseText, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: {
+            ...Object.fromEntries(response.headers.entries()),
+            'content-type': 'application/json', // Ensure it's JSON, not SSE
+          },
+        });
+
+        return newResponse;
+      } catch (error: any) {
+        console.error(
+          `Request #${requestId} - Error:`,
+          error.message,
+          error.code,
         );
-      } else {
-        throw new Error(
-          `Berget AI API error: ${response.status} ${response.statusText} - ${errorText}`,
-        );
+        throw error;
       }
     }
 
-    return response;
+    // Default fetch for non-Berget requests
+    return fetch(input, init);
   },
 });
 
@@ -90,13 +118,22 @@ export const myProvider = isTestEnvironment
         'title-model': anthropic('claude-sonnet-4-20250514'),
         'artifact-model': anthropic('claude-sonnet-4-20250514'),
         // Berget AI models
-        'deepseek-r1': wrapLanguageModel({
-          model: bergetAiProvider('unsloth/MAI-DS-R1-GGUF'),
-          middleware: extractReasoningMiddleware({ tagName: 'think' }),
-        }),
-        'deepseek-chat': bergetAiProvider('meta-llama/Llama-3.3-70B-Instruct'),
+        /*
+        'deepseek-r1': (() => {
+          try {
+            return wrapLanguageModel({
+              model: bergetAiProvider('unsloth/MAI-DS-R1-GGUF'),
+              middleware: extractReasoningMiddleware({ tagName: 'think' }),
+            });
+          } catch (error) {
+            console.error('Error wrapping deepseek-r1 model:', error);
+            return bergetAiProvider('unsloth/MAI-DS-R1-GGUF');
+          }
+        })(),
+        */
+        'llama-chat': bergetAiProvider('meta-llama/Llama-3.3-70B-Instruct'),
       },
       imageModels: {
-        'small-model': openaiProvider.image('dall-e-3'),
+        'small-model': openaiProvider.imageModel('dall-e-3'),
       },
     });

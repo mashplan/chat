@@ -24,9 +24,9 @@ export const chatModels: Array<ChatModel> = [
       'DeepSeek R1 reasoning model via Berget AI - excellent for math, coding, and complex reasoning tasks',
   },
   {
-    id: 'deepseek-chat',
-    name: 'DeepSeek Chat (via Berget AI)',
+    id: 'llama-chat',
+    name: 'Llama 3.3 70B (via Berget AI)',
     description:
-      'DeepSeek V3 chat model via Berget AI - general purpose conversational AI',
+      'Llama 3.3 70B Instruct model via Berget AI - general purpose conversational AI',
   },
 ];

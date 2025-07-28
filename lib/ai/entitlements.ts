@@ -16,7 +16,7 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
       'chat-model',
       'chat-model-reasoning',
       'deepseek-r1',
-      'deepseek-chat',
+      'llama-chat',
     ],
   },
 
@@ -29,7 +29,7 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
       'chat-model',
       'chat-model-reasoning',
       'deepseek-r1',
-      'deepseek-chat',
+      'llama-chat',
     ],
   },
 
