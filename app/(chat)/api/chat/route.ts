@@ -206,8 +206,7 @@ export async function POST(request: Request) {
           })),
         });
       },
-      onError: (error) => {
-        console.error('Stream error:', error);
+      onError: () => {
         return 'Oops, an error occurred!';
       },
     });
@@ -224,7 +223,6 @@ export async function POST(request: Request) {
       return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
     }
   } catch (error) {
-    console.error('Chat route error:', error);
     if (error instanceof ChatSDKError) {
       return error.toResponse();
     }
