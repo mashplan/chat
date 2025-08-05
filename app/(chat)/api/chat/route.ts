@@ -221,9 +221,7 @@ export async function POST(request: Request) {
         ),
       );
     } else {
-      return new Response(
-        stream.pipeThrough(new JsonToSseTransformStream()),
-      );
+      return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
     }
   } catch (error) {
     console.error('Chat route error:', error);
@@ -232,11 +230,13 @@ export async function POST(request: Request) {
     }
     // Return a proper error response for other errors
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'An error occurred' }),
-      { 
+      JSON.stringify({
+        error: error instanceof Error ? error.message : 'An error occurred',
+      }),
+      {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
+        headers: { 'Content-Type': 'application/json' },
+      },
     );
   }
 }
