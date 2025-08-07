@@ -24,6 +24,12 @@ export const chatModels: Array<ChatModel> = [
       'DeepSeek R1 reasoning model via Berget AI - excellent for math, coding, and complex reasoning tasks',
   },
   {
+    id: 'openai-gpt-oss-120b',
+    name: 'OpenAI GPT-OSS 120B (via Berget AI)',
+    description:
+      'OpenAI GPT-OSS 120B model via Berget AI - powerful open-source model with strong reasoning capabilities',
+  },
+  {
     id: 'llama-chat',
     name: 'Llama 3.3 70B (via Berget AI)',
     description:

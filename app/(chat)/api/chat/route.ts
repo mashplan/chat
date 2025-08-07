@@ -159,7 +159,8 @@ export async function POST(request: Request) {
           stopWhen: stepCountIs(5),
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning' ||
-            selectedChatModel === 'deepseek-r1'
+            selectedChatModel === 'deepseek-r1' ||
+            selectedChatModel === 'openai-gpt-oss-120b'
               ? []
               : [
                   'getWeather',

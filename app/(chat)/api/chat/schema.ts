@@ -25,6 +25,7 @@ export const postRequestBodySchema = z.object({
     'chat-model',
     'chat-model-reasoning',
     'deepseek-r1',
+    'openai-gpt-oss-120b',
     'llama-chat',
   ]),
   selectedVisibilityType: z.enum(['public', 'private']),
