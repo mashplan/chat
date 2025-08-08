@@ -23,16 +23,23 @@ export const generateImageTool = tool({
         prompt,
         size,
       });
+      // Infer mime type from data URI if present; default to PNG
+      const inferredMimeType = (() => {
+        const match = image.base64.match(
+          /^data:(image\/[a-zA-Z0-9.+-]+);base64,/,
+        );
+        return match ? match[1] : 'image/png';
+      })();
       console.log('Image generated successfully:', {
-        mimeType: image.mimeType,
+        mimeType: inferredMimeType,
       });
 
       // Upload image to Scaleway Object Storage
       try {
         const uploadResult = await uploadImageFromBase64(
           image.base64,
-          image.mimeType,
-          `generated-${Date.now()}.${image.mimeType.split('/')[1]}`,
+          inferredMimeType,
+          `generated-${Date.now()}.${inferredMimeType.split('/')[1]}`,
         );
 
         return {
@@ -47,7 +54,7 @@ export const generateImageTool = tool({
         // Fallback to base64 if upload fails
         return {
           success: true,
-          imageUrl: `data:${image.mimeType};base64,${image.base64}`,
+          imageUrl: `data:${inferredMimeType};base64,${image.base64}`,
           prompt,
           size,
           fallback: true,
