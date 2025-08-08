@@ -32,50 +32,6 @@ const bergetAiProvider = createOpenAICompatible({
   name: 'berget-ai',
   apiKey: process.env.BERGET_AI_API_KEY || 'dummy-key-for-tests',
   baseURL: 'https://api.berget.ai/v1',
-  fetch: async (url, options) => {
-    const response = await fetch(url, options);
-
-    // Check for streaming errors in the response
-    if (
-      response.ok &&
-      response.headers.get('content-type')?.includes('text/event-stream')
-    ) {
-      const clonedResponse = response.clone();
-      const reader = clonedResponse.body?.getReader();
-
-      if (reader) {
-        const decoder = new TextDecoder();
-        try {
-          const { value, done } = await reader.read();
-          if (!done && value) {
-            const chunk = decoder.decode(value);
-            // Check if the chunk contains an error
-            if (chunk.includes('"error"')) {
-              try {
-                const errorData = JSON.parse(chunk);
-                if (errorData.error) {
-                  console.error('[BERGET AI] API Error:', errorData.error);
-                  // Throw a proper error that the AI SDK can handle
-                  throw new Error(
-                    `Berget AI Error: ${errorData.error.message} (${errorData.error.code})`,
-                  );
-                }
-              } catch (parseError) {
-                // If it's not valid JSON, continue normally
-              }
-            }
-          }
-        } catch (error) {
-          console.error('[BERGET AI] Stream error:', error);
-          throw error;
-        } finally {
-          reader.releaseLock();
-        }
-      }
-    }
-
-    return response;
-  },
 });
 
 export const myProvider = isTestEnvironment
@@ -103,7 +59,7 @@ export const myProvider = isTestEnvironment
         }),
         'openai-gpt-oss-120b': wrapLanguageModel({
           model: bergetAiProvider('openai/gpt-oss-120b'),
-          middleware: extractReasoningMiddleware({ tagName: 'think' }),
+          middleware: extractHarmonyReasoningMiddleware(),
         }),
         'llama-chat': bergetAiProvider('meta-llama/Llama-3.3-70B-Instruct'),
       },
@@ -111,3 +67,6 @@ export const myProvider = isTestEnvironment
         'small-model': openaiProvider.imageModel('dall-e-3'),
       },
     });
+
+// Export raw Berget AI provider for debugging endpoints
+export const bergetAi = bergetAiProvider;
