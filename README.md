@@ -62,6 +62,25 @@ You can deploy your own version of the Next.js AI Chatbot to Vercel with one cli
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fai-chatbot&env=AUTH_SECRET&envDescription=Learn+more+about+how+to+get+the+API+Keys+for+the+application&envLink=https%3A%2F%2Fgithub.com%2Fvercel%2Fai-chatbot%2Fblob%2Fmain%2F.env.example&demo-title=AI+Chatbot&demo-description=An+Open-Source+AI+Chatbot+Template+Built+With+Next.js+and+the+AI+SDK+by+Vercel.&demo-url=https%3A%2F%2Fchat.vercel.ai&products=%5B%7B%22type%22%3A%22integration%22%2C%22protocol%22%3A%22ai%22%2C%22productSlug%22%3A%22grok%22%2C%22integrationSlug%22%3A%22xai%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22protocol%22%3A%22storage%22%2C%22productSlug%22%3A%22neon%22%2C%22integrationSlug%22%3A%22neon%22%7D%2C%7B%22type%22%3A%22integration%22%2C%22protocol%22%3A%22storage%22%2C%22productSlug%22%3A%22upstash-kv%22%2C%22integrationSlug%22%3A%22upstash%22%7D%2C%7B%22type%22%3A%22blob%22%7D%5D)
 
+## Running locally
+
+You will need to use the environment variables [defined in `.env.example`](.env.example) to run Next.js AI Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
+
+> Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
+
+1. Install Vercel CLI: `npm i -g vercel`
+2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
+3. Download your environment variables: `vercel env pull`
+
+```bash
+pnpm install
+pnpm dev
+```
+
+Your app template should now be running on [localhost:3000](http://localhost:3000).
+# Test deployment
+Triggering automatic deployment test
+
 ### Deploy to Scaleway Serverless Containers
 
 This template is configured for deployment to [Scaleway Serverless Containers](https://www.scaleway.com/en/docs/serverless/containers/) with automatic GitHub Actions deployment.
@@ -203,36 +222,3 @@ scw container container exec <container-id> -- pnpm run db:migrate
 - **Auth Issues**: Verify `AUTH_SECRET` and `NEXT_PUBLIC_APP_URL` are set correctly
 - **Database Connection**: Ensure `POSTGRES_URL` is correct and database is accessible
 - **Build Failures**: Check that all required environment variables are set
-
-#### Local Testing
-
-Test the Docker image locally before deployment:
-
-```bash
-# Build the image
-docker build --platform linux/amd64 -t your-app .
-
-# Run locally (will show platform warning on M1/M2 Macs)
-docker run -p 8081:8080 --env-file .env your-app
-```
-
-The application will be available at `http://localhost:8081`.
-
-## Running locally
-
-You will need to use the environment variables [defined in `.env.example`](.env.example) to run Next.js AI Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
-
-> Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
-
-1. Install Vercel CLI: `npm i -g vercel`
-2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
-3. Download your environment variables: `vercel env pull`
-
-```bash
-pnpm install
-pnpm dev
-```
-
-Your app template should now be running on [localhost:3000](http://localhost:3000).
-# Test deployment
-Triggering automatic deployment test

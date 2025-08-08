@@ -16,7 +16,8 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
       'chat-model',
       'chat-model-reasoning',
       'deepseek-r1',
-      'deepseek-chat',
+      'openai-gpt-oss-120b',
+      'llama-chat',
     ],
   },
 
@@ -29,7 +30,8 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
       'chat-model',
       'chat-model-reasoning',
       'deepseek-r1',
-      'deepseek-chat',
+      'openai-gpt-oss-120b',
+      'llama-chat',
     ],
   },
 

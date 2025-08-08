@@ -61,7 +61,8 @@ export const systemPrompt = ({
 
   if (
     selectedChatModel === 'chat-model-reasoning' ||
-    selectedChatModel === 'deepseek-r1'
+    selectedChatModel === 'deepseek-r1' ||
+    selectedChatModel === 'openai-gpt-oss-120b'
   ) {
     return `${regularPrompt}\n\n${requestPrompt}`;
   } else {

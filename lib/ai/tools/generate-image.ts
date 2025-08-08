@@ -5,7 +5,7 @@ import { uploadImageFromBase64 } from '@/lib/storage/scaleway';
 
 export const generateImageTool = tool({
   description: 'Generate an image based on a text description',
-  parameters: z.object({
+  inputSchema: z.object({
     prompt: z
       .string()
       .describe('A detailed description of the image to generate'),
