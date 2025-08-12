@@ -1,0 +1,38 @@
+---
+description: Common development, build, lint, database, and test commands
+alwaysApply: false
+---
+
+Development:
+```bash
+pnpm dev
+pnpm start
+```
+
+Build:
+```bash
+pnpm build
+```
+
+Code quality:
+```bash
+pnpm lint
+pnpm lint:fix
+pnpm format
+```
+
+Database:
+```bash
+pnpm db:generate
+pnpm db:migrate
+pnpm db:studio
+pnpm db:push
+```
+
+Testing:
+```bash
+pnpm test
+```
+@package.json
+@CLAUDE.md
+

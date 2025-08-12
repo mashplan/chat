@@ -1,0 +1,16 @@
+---
+description: Testing strategy with Playwright
+alwaysApply: false
+---
+
+- e2e tests and route tests live under `tests/`.
+- Run tests with:
+```bash
+pnpm test
+```
+- Tests use mock AI models; run in parallel; traces collected on failure.
+@playwright.config.ts
+@tests/e2e/basic.test.ts
+@tests/routes/chat.test.ts
+@tests/helpers.ts
+

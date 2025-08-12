@@ -1,0 +1,19 @@
+---
+description: Artifact types and editors
+alwaysApply: false
+---
+
+- Supported artifacts:
+  - Text: ProseMirror-based editor
+  - Code: CodeMirror with syntax highlighting
+  - Image: AI-generated images with editing
+  - Sheet: Spreadsheet via `react-data-grid`
+@artifacts/text/server.ts
+@artifacts/text/client.tsx
+@artifacts/code/server.ts
+@artifacts/code/client.tsx
+@artifacts/image/server.ts
+@artifacts/image/client.tsx
+@artifacts/sheet/server.ts
+@artifacts/sheet/client.tsx
+

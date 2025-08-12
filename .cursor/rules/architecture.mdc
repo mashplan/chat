@@ -1,0 +1,19 @@
+---
+description: High-level architecture and key directories
+alwaysApply: false
+---
+
+- Framework: Next.js 15 (App Router, React Server Components)
+- AI SDK v5 beta for LLM integration with streaming
+- Drizzle ORM + PostgreSQL
+- NextAuth.js v5
+- Tailwind CSS + shadcn/ui
+- Key directories:
+  - `app/` (auth, chat)
+  - `lib/` (ai, db, artifacts, editor)
+  - `components/`
+  - `artifacts/`
+  - `hooks/`
+  - `tests/`
+@README.md
+

@@ -1,0 +1,13 @@
+---
+description: Authentication architecture (NextAuth v5)
+alwaysApply: false
+---
+
+- Email/password auth plus guest user support.
+- Sessions managed with JWT.
+- Protect routes using middleware.
+@app/(auth)/auth.ts
+@app/(auth)/auth.config.ts
+@middleware.ts
+@app/(auth)/api/auth/[...nextauth]/route.ts
+

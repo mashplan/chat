@@ -1,0 +1,11 @@
+---
+description: Frontend conventions for components and styling
+alwaysApply: false
+---
+
+- Use Tailwind CSS and shadcn/ui components.
+- Prefer composition and accessibility best practices.
+@tailwind.config.ts
+@components/ui/button.tsx
+@components/ui/input.tsx
+

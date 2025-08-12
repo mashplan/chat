@@ -1,0 +1,12 @@
+---
+description: Chat flow, streaming endpoints, and related middleware
+alwaysApply: false
+---
+
+- Chat responses stream from server endpoints.
+- Harmony reasoning middleware may wrap model calls when enabled.
+@app/(chat)/api/chat/route.ts
+@app/(chat)/api/chat/[id]/stream/route.ts
+@lib/ai/middleware/harmony-reasoning.ts
+@lib/ai/providers.ts
+

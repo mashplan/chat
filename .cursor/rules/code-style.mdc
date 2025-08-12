@@ -1,0 +1,17 @@
+---
+description: Code style and formatting standards used in this project
+alwaysApply: true
+---
+
+- Use Biome and ESLint (Next.js + a11y). Match repository formatting.
+- Indentation: 2 spaces; line width: 80 chars.
+- JS/TS strings: single quotes. JSX props/strings: double quotes.
+- Prefer clear, descriptive names; avoid 1–2 character identifiers.
+- After edits, run:
+```bash
+pnpm lint
+pnpm format
+```
+@biome.jsonc
+@package.json
+

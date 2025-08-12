@@ -1,0 +1,10 @@
+---
+description: Performance features and considerations
+alwaysApply: false
+---
+
+- Next.js PPR (Partial Pre-rendering) enabled.
+- Heavy use of React Server Components.
+- Streaming responses for real-time chat.
+- SWR for client-side fetching and caching.
+

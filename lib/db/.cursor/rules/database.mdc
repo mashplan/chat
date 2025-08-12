@@ -1,0 +1,23 @@
+---
+description: Database conventions with Drizzle ORM and migrations
+alwaysApply: false
+---
+
+- Use Drizzle ORM with PostgreSQL.
+- Do not manually edit files in `lib/db/migrations/`; they are auto-generated.
+- After schema changes:
+```bash
+pnpm db:generate
+pnpm db:migrate
+```
+- Utilities:
+```bash
+pnpm db:studio
+pnpm db:push
+```
+@lib/db/schema.ts
+@lib/db/queries.ts
+@lib/db/utils.ts
+@lib/db/migrate.ts
+@lib/db/migrations/
+

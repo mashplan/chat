@@ -1,0 +1,9 @@
+---
+description: Environment setup and migration notes
+alwaysApply: false
+---
+
+- Requires `.env.local` with database and API credentials.
+- Uses `pnpm` package manager.
+- Database migrations run automatically before build.
+

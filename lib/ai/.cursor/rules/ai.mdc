@@ -1,0 +1,22 @@
+---
+description: AI models, providers, and tools used in this project
+alwaysApply: false
+---
+
+- Primary models: xAI Grok (`grok-2-vision-1212`, `grok-3-mini-beta`).
+- Model types:
+  - `chat-model` (main)
+  - `chat-model-reasoning` (uses <think> tags)
+  - `title-model` (chat titles)
+  - `artifact-model` (artifact content)
+- Custom provider with test environment fallbacks.
+- Available tools: weather, document create/update, suggestions.
+@lib/ai/models.ts
+@lib/ai/providers.ts
+@lib/ai/prompts.ts
+@lib/ai/tools/generate-image.ts
+@lib/ai/tools/create-document.ts
+@lib/ai/tools/update-document.ts
+@lib/ai/tools/request-suggestions.ts
+@lib/ai/middleware/harmony-reasoning.ts
+
