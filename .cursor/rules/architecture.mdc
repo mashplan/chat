@@ -4,7 +4,7 @@ alwaysApply: false
 ---
 
 - Framework: Next.js 15 (App Router, React Server Components)
-- AI SDK v5 beta for LLM integration with streaming
+- AI SDK v5 for LLM integration with streaming
 - Drizzle ORM + PostgreSQL
 - NextAuth.js v5
 - Tailwind CSS + shadcn/ui
