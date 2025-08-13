@@ -14,6 +14,9 @@ elif [ -n "$REDIS_CA_PEM" ]; then
   echo "Writing REDIS_CA_PEM to /tmp/redis-ca.pem"
   printf "%s" "$REDIS_CA_PEM" > /tmp/redis-ca.pem
   export NODE_EXTRA_CA_CERTS=/tmp/redis-ca.pem
+elif [ -f "/app/certs/redis-ca.pem" ]; then
+  echo "Using CA from /app/certs/redis-ca.pem"
+  export NODE_EXTRA_CA_CERTS=/app/certs/redis-ca.pem
 fi
 
 # Note: Database migrations should be run separately before deployment
