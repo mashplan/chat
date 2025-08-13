@@ -158,8 +158,8 @@ export function extractHarmonyReasoningMiddleware(): LanguageModelV2Middleware {
             }
 
             if (part?.type === 'text-delta') {
-              const delta: string = part.delta ?? '';
-              buffer += delta;
+              const deltaText: string = (part.delta ?? '') as string;
+              buffer += deltaText;
 
               // detect harmony markers
               const markerMatch = buffer.match(
