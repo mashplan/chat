@@ -6,4 +6,8 @@ alwaysApply: false
 - Requires `.env.local` with database and API credentials.
 - Uses `pnpm` package manager.
 - Database migrations run automatically before build.
+ - Redis (for resumable streams) requires `REDIS_URL` and TLS CA.
+   - Local: set `NODE_EXTRA_CA_CERTS` to the PEM path.
+   - Scaleway: add `REDIS_CA_PEM` as a Secret; `start.sh` writes it to `/tmp/redis-ca.pem`.
+ - Berget AI: set `BERGET_AI_API_KEY` to enable optional models.
 

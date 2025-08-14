@@ -8,6 +8,8 @@ alwaysApply: false
 - Drizzle ORM + PostgreSQL
 - NextAuth.js v5
 - Tailwind CSS + shadcn/ui
+- Optional: Redis for resumable streaming (via `resumable-stream`); configured with `REDIS_URL`.
+- Optional: Berget AI models via OpenAI-compatible provider when `BERGET_AI_API_KEY` is set.
 - Key directories:
   - `app/` (auth, chat)
   - `lib/` (ai, db, artifacts, editor)
