@@ -38,6 +38,8 @@ import { ChatSDKError } from '@/lib/errors';
 import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
+import { createClient } from 'redis';
+import fs from 'node:fs';
 
 export const maxDuration = 60;
 
@@ -46,11 +48,52 @@ let globalStreamContext: ResumableStreamContext | null = null;
 export function getStreamContext() {
   if (!globalStreamContext) {
     try {
-      globalStreamContext = createResumableStreamContext({
-        waitUntil: after,
-      });
+      const url = process.env.REDIS_URL || process.env.KV_URL;
+      // If a URL is not provided, let the library throw its standard error.
+      // Otherwise, pass custom clients so we can inject TLS options/CA.
+      if (!url) {
+        globalStreamContext = createResumableStreamContext({
+          waitUntil: after,
+        });
+      } else {
+        const caFromEnv = process.env.REDIS_CA_PEM;
+        const caFromFilePath = process.env.NODE_EXTRA_CA_CERTS;
+        let ca: string | undefined;
+        if (caFromEnv?.trim()) {
+          ca = caFromEnv;
+        } else if (caFromFilePath) {
+          try {
+            ca = fs.readFileSync(caFromFilePath, 'utf8');
+          } catch {
+            // ignore
+          }
+        }
+
+        const insecure = process.env.REDIS_TLS_INSECURE === '1';
+        const socketOptions: any = url.startsWith('rediss://')
+          ? {
+              tls: true,
+              ...(ca ? { ca } : {}),
+              ...(insecure
+                ? {
+                    // Skip hostname verification if explicitly requested
+                    checkServerIdentity: () => undefined,
+                  }
+                : {}),
+            }
+          : {};
+
+        const publisher = createClient({ url, socket: socketOptions });
+        const subscriber = createClient({ url, socket: socketOptions });
+
+        globalStreamContext = createResumableStreamContext({
+          waitUntil: after,
+          publisher,
+          subscriber,
+        });
+      }
     } catch (error: any) {
-      if (error.message.includes('REDIS_URL')) {
+      if (error?.message?.includes('REDIS_URL')) {
         console.log(
           ' > Resumable streams are disabled due to missing REDIS_URL',
         );
