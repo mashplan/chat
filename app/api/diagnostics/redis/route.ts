@@ -24,8 +24,17 @@ export async function GET() {
     hasCA: Boolean(process.env.NODE_EXTRA_CA_CERTS),
   };
 
-  const client = createClient({ url });
-  client.on('error', () => {});
+  const client = createClient({
+    url,
+    socket: {
+      connectTimeout: 5000,
+      reconnectStrategy: () => new Error('no-reconnect'),
+    },
+  });
+  let lastError: string | null = null;
+  client.on('error', (e) => {
+    lastError = e instanceof Error ? e.message : String(e);
+  });
 
   try {
     await client.connect();
@@ -62,6 +71,7 @@ export async function GET() {
       {
         ok: false,
         error: error instanceof Error ? error.message : String(error),
+        lastError,
         diagnostics,
       },
       { status: 500 },
