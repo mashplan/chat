@@ -24,11 +24,33 @@ export async function GET() {
     hasCA: Boolean(process.env.NODE_EXTRA_CA_CERTS),
   };
 
+  const caFromEnv = process.env.REDIS_CA_PEM;
+  const caFromFile = process.env.NODE_EXTRA_CA_CERTS;
+  let ca: string | undefined;
+  if (caFromEnv?.trim()) ca = caFromEnv;
+  else if (caFromFile) {
+    try {
+      ca = await (await import('node:fs/promises')).readFile(
+        caFromFile,
+        'utf8',
+      );
+    } catch {}
+  }
+
+  const insecure = process.env.REDIS_TLS_INSECURE === '1';
+
   const client = createClient({
     url,
     socket: {
       connectTimeout: 5000,
       reconnectStrategy: () => new Error('no-reconnect'),
+      ...(url.startsWith('rediss://')
+        ? {
+            tls: true,
+            ...(ca ? { ca } : {}),
+            ...(insecure ? { checkServerIdentity: () => undefined } : {}),
+          }
+        : {}),
     },
   });
   let lastError: string | null = null;
