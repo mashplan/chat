@@ -13,7 +13,7 @@ export async function GET() {
 
   const parsed = new URL(url);
   const host = parsed.hostname;
-  const port = parseInt(parsed.port || '6379');
+  const port = Number.parseInt(parsed.port || '6379');
   const password = decodeURIComponent(parsed.password || '');
   const username = decodeURIComponent(parsed.username || '');
 
@@ -51,13 +51,14 @@ export async function GET() {
             success: true,
             authorized,
             authError,
-            cert: {
-              subject: cert.subject,
-              issuer: cert.issuer,
-              subjectAltName: cert.subjectAltName,
-              valid_from: cert.valid_from,
-              valid_to: cert.valid_to,
-            },
+            cert: cert
+              ? {
+                  subject: cert.subject,
+                  issuer: cert.issuer,
+                  valid_from: cert.valid_from,
+                  valid_to: cert.valid_to,
+                }
+              : null,
           });
         },
       );
@@ -90,7 +91,7 @@ export async function GET() {
 
     if (ca) {
       results.caLength = ca.length;
-      results.caPreview = ca.substring(0, 50) + '...';
+      results.caPreview = `${ca.substring(0, 50)}...`;
 
       results.tests.tlsWithCa = await new Promise((resolve) => {
         const client = tls.connect(
