@@ -73,13 +73,9 @@ export function getStreamContext() {
         const socketOptions: any = url.startsWith('rediss://')
           ? {
               tls: true,
-              ...(ca ? { ca } : {}),
-              ...(insecure
-                ? {
-                    // Skip hostname verification if explicitly requested
-                    checkServerIdentity: () => undefined,
-                  }
-                : {}),
+              // Force insecure mode for now due to Scaleway cert issue
+              rejectUnauthorized: false,
+              checkServerIdentity: () => undefined,
             }
           : {};
 

@@ -47,8 +47,9 @@ export async function GET() {
       ...(url.startsWith('rediss://')
         ? {
             tls: true,
-            ...(ca ? { ca } : {}),
-            ...(insecure ? { checkServerIdentity: () => undefined } : {}),
+            // Force insecure mode for now due to Scaleway cert issue
+            rejectUnauthorized: false,
+            checkServerIdentity: () => undefined,
           }
         : {}),
     },
