@@ -30,14 +30,13 @@ SCALEWAY_OS_BUCKET_NAME=...
 SCALEWAY_OS_REGION=nl-ams
 SCALEWAY_OS_ENDPOINT=https://s3.nl-ams.scw.cloud
 
-# Redis resumable streams (optional but recommended)
-REDIS_URL=rediss://<ENC_USER>:<ENC_PASS>@<host>:6379
-REDIS_CA_PEM=<paste full PEM as secret>
+# Redis resumable streams (DO NOT USE with Scaleway - see docs/redis.md)
+# REDIS_URL=rediss://<ENC_USER>:<ENC_PASS>@<host>:6379
 ```
 
 Notes:
-- Normal env vars are limited to 1000 chars. Use the Secrets section for long values like `REDIS_CA_PEM`.
-- The image runs `./start.sh`, which auto-loads the Redis CA from `NODE_EXTRA_CA_CERTS`, `REDIS_CA_PEM`, or `/app/certs/redis-ca.pem`.
+- Normal env vars are limited to 1000 chars. Use the Secrets section for long values.
+- The image runs `./start.sh` on startup.
 
 #### Build and deploy (manual)
 
@@ -72,6 +71,6 @@ scw container container exec <container-id> -- pnpm db:migrate
 
 - 502: ensure HTTP/1.1 and correct port.
 - DB errors: verify `POSTGRES_URL` and network access.
-- Redis TLS errors: ensure `REDIS_URL` uses `rediss://` and provide the CA via `REDIS_CA_PEM` secret.
+- Redis: Not currently supported on Scaleway due to certificate issues. See docs/redis.md for details.
 
 

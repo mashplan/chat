@@ -85,7 +85,17 @@ Writing REDIS_CA_PEM to /tmp/redis-ca.pem
 
 ---
 
-### 5) Troubleshooting
+### 5) Known Issues with Scaleway Redis
+
+**Important:** As of December 2024, Scaleway's Managed Redis has certificate issues on private networks that prevent resumable streams from working properly:
+
+- Scaleway uses self-signed certificates with CN that doesn't match private IPs
+- The downloaded CA certificate doesn't validate their self-signed certificates
+- Even with certificate validation disabled, the `resumable-stream` library causes UI updates to fail
+
+**Current Recommendation:** Do not use Redis with this application on Scaleway until they fix their certificate infrastructure. The app works perfectly without Redis - you only lose the ability to resume interrupted streams, which is a minor feature.
+
+### 6) General Troubleshooting
 
 - Invalid URL: percent‑encode username/password; ensure `rediss://`.
 - `self-signed certificate`: provide the PEM via one of the methods above.
@@ -95,7 +105,7 @@ Writing REDIS_CA_PEM to /tmp/redis-ca.pem
 
 ---
 
-### 6) Security notes
+### 7) Security notes
 
 - Do not commit the PEM file. Use secrets or a runtime mount.
 - Treat `REDIS_URL` like a secret; avoid logging it.
