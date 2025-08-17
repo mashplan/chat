@@ -30,6 +30,12 @@ SCALEWAY_OS_BUCKET_NAME=...
 SCALEWAY_OS_REGION=nl-ams
 SCALEWAY_OS_ENDPOINT=https://s3.nl-ams.scw.cloud
 
+# Web Search with Brave API (optional but recommended)
+BRAVE_API_KEY=your-brave-api-key-here
+
+# URL Scraping with Firecrawl Cloud API (optional but recommended)
+FIRECRAWL_API_KEY=your-firecrawl-api-key-here
+
 # Redis resumable streams (DO NOT USE with Scaleway - see docs/redis.md)
 # REDIS_URL=rediss://<ENC_USER>:<ENC_PASS>@<host>:6379
 ```

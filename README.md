@@ -33,6 +33,9 @@
   - [Vercel Blob](https://vercel.com/storage/blob) for efficient file storage
 - [Auth.js](https://authjs.dev)
   - Simple and secure authentication
+- Web Search (via Brave Search API)
+  - Privacy-focused web search
+  - GDPR-compliant implementation
 
 ## Model Providers
 
