@@ -32,6 +32,7 @@ const bergetAiProvider = createOpenAICompatible({
   name: 'berget-ai',
   apiKey: process.env.BERGET_AI_API_KEY || 'dummy-key-for-tests',
   baseURL: 'https://api.berget.ai/v1',
+  includeUsage: true, // Include usage information in streaming responses
 });
 
 export const myProvider = isTestEnvironment
@@ -57,11 +58,16 @@ export const myProvider = isTestEnvironment
           model: bergetAiProvider('unsloth/MAI-DS-R1-GGUF'),
           middleware: extractReasoningMiddleware({ tagName: 'think' }),
         }),
-        'openai-gpt-oss-120b': wrapLanguageModel({
-          model: bergetAiProvider('openai/gpt-oss-120b'),
-          middleware: extractHarmonyReasoningMiddleware(),
-        }),
+        'openai-gpt-oss-120b': bergetAiProvider('openai/gpt-oss-120b'),
+        // Temporarily disabled harmony middleware due to errors
+        // 'openai-gpt-oss-120b': wrapLanguageModel({
+        //   model: bergetAiProvider('openai/gpt-oss-120b'),
+        //   middleware: extractHarmonyReasoningMiddleware(),
+        // }),
         'llama-chat': bergetAiProvider('meta-llama/Llama-3.3-70B-Instruct'),
+        'mistral-chat': bergetAiProvider(
+          'mistralai/Mistral-Small-3.1-24B-Instruct-2503',
+        ),
       },
       imageModels: {
         'small-model': openaiProvider.imageModel('dall-e-3'),

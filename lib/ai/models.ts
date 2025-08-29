@@ -35,4 +35,10 @@ export const chatModels: Array<ChatModel> = [
     description:
       'Llama 3.3 70B Instruct model via Berget AI - general purpose conversational AI',
   },
+  {
+    id: 'mistral-chat',
+    name: 'Mistral Small 3.1 (via Berget AI)',
+    description:
+      'Mistral Small 3.1 24B model via Berget AI - fast and efficient with excellent tool support',
+  },
 ];
