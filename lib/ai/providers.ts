@@ -8,6 +8,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModelV2Middleware } from '@ai-sdk/provider';
 // import { extractHarmonyReasoningMiddleware } from './middleware/harmony-reasoning';
+import { gateway } from '@ai-sdk/gateway';
 import {
   artifactModel,
   chatModel,
@@ -39,77 +40,65 @@ const bergetAiProvider = createOpenAICompatible({
 
 export const myProvider = isTestEnvironment
   ? customProvider({
-      languageModels: {
-        'chat-model': chatModel,
-        'chat-model-reasoning': reasoningModel,
-        'title-model': titleModel,
-        'artifact-model': artifactModel,
-      },
-    })
+    languageModels: {
+      'chat-model': chatModel,
+      'chat-model-reasoning': reasoningModel,
+      'title-model': titleModel,
+      'artifact-model': artifactModel,
+    },
+  })
   : customProvider({
-      languageModels: {
-        'chat-model': withDebug(
-          anthropic('claude-sonnet-4-20250514'),
-          'anthropic:claude-sonnet-4-20250514',
-        ),
-        'chat-model-reasoning': withDebug(
-          wrapLanguageModel({
-            model: anthropic('claude-sonnet-4-20250514'),
-            middleware: extractReasoningMiddleware({ tagName: 'think' }),
+    languageModels: {
+      'chat-model': gateway.languageModel('xai/grok-2-vision-1212'),
+      'chat-model-reasoning': wrapLanguageModel({
+        model: gateway.languageModel('xai/grok-3-mini-beta'),
+        middleware: extractReasoningMiddleware({ tagName: 'think' }),
+      }),
+      'title-model': gateway.languageModel('xai/grok-2-1212'),
+      'artifact-model': gateway.languageModel('xai/grok-2-1212'),
+      // Berget AI models
+      'deepseek-r1': withDebug(
+        wrapLanguageModel({
+          model: bergetAiProvider('unsloth/MAI-DS-R1-GGUF'),
+          middleware: extractReasoningMiddleware({ tagName: 'think' }),
+        }),
+        'berget-ai:unsloth/MAI-DS-R1-GGUF',
+      ),
+      'openai-gpt-oss-120b': withDebug(
+        new BergetChatLanguageModel('openai/gpt-oss-120b', {
+          baseURL: 'https://api.berget.ai/v1',
+          provider: 'berget-ai',
+          headers: () => ({
+            Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
           }),
-          'anthropic:claude-sonnet-4-20250514:reasoning',
-        ),
-        'title-model': withDebug(
-          anthropic('claude-sonnet-4-20250514'),
-          'anthropic:claude-sonnet-4-20250514:title',
-        ),
-        'artifact-model': withDebug(
-          anthropic('claude-sonnet-4-20250514'),
-          'anthropic:claude-sonnet-4-20250514:artifact',
-        ),
-        // Berget AI models
-        'deepseek-r1': withDebug(
-          wrapLanguageModel({
-            model: bergetAiProvider('unsloth/MAI-DS-R1-GGUF'),
-            middleware: extractReasoningMiddleware({ tagName: 'think' }),
+        }) as any,
+        'berget-ai:openai/gpt-oss-120b',
+      ),
+      'llama-chat': withDebug(
+        new BergetChatLanguageModel('meta-llama/Llama-3.3-70B-Instruct', {
+          baseURL: 'https://api.berget.ai/v1',
+          provider: 'berget-ai',
+          headers: () => ({
+            Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
           }),
-          'berget-ai:unsloth/MAI-DS-R1-GGUF',
-        ),
-        'openai-gpt-oss-120b': withDebug(
-          new BergetChatLanguageModel('openai/gpt-oss-120b', {
-            baseURL: 'https://api.berget.ai/v1',
-            provider: 'berget-ai',
-            headers: () => ({
-              Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
-            }),
-          }) as any,
-          'berget-ai:openai/gpt-oss-120b',
-        ),
-        'llama-chat': withDebug(
-          new BergetChatLanguageModel('meta-llama/Llama-3.3-70B-Instruct', {
-            baseURL: 'https://api.berget.ai/v1',
-            provider: 'berget-ai',
-            headers: () => ({
-              Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
-            }),
-          }) as any,
-          'berget-ai:meta-llama/Llama-3.3-70B-Instruct',
-        ),
-        'mistral-chat': withDebug(
-          new BergetChatLanguageModel('mistralai/Magistral-Small-2506', {
-            baseURL: 'https://api.berget.ai/v1',
-            provider: 'berget-ai',
-            headers: () => ({
-              Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
-            }),
-          }) as any,
-          'berget-ai:mistralai/Magistral-Small-2506',
-        ),
-      },
-      imageModels: {
-        'small-model': openaiProvider.imageModel('dall-e-3'),
-      },
-    });
+        }) as any,
+        'berget-ai:meta-llama/Llama-3.3-70B-Instruct',
+      ),
+      'mistral-chat': withDebug(
+        new BergetChatLanguageModel('mistralai/Magistral-Small-2506', {
+          baseURL: 'https://api.berget.ai/v1',
+          provider: 'berget-ai',
+          headers: () => ({
+            Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
+          }),
+        }) as any,
+        'berget-ai:mistralai/Magistral-Small-2506',
+      ),
+    },
+    imageModels: {
+      'small-model': openaiProvider.imageModel('dall-e-3'),
+    },
+  });
 
 // Export raw Berget AI provider for debugging endpoints
 export const bergetAi = bergetAiProvider;
@@ -145,13 +134,13 @@ function createDebugMiddleware(label: string): LanguageModelV2Middleware {
           `[DEBUG][${label}] generate params:`,
           summarizeParams(params),
         );
-      } catch {}
+      } catch { }
 
       const result = await doGenerate();
 
       try {
         console.log(`[DEBUG][${label}] generate result:`, safeJson(result));
-      } catch {}
+      } catch { }
 
       return result;
     },
@@ -162,7 +151,7 @@ function createDebugMiddleware(label: string): LanguageModelV2Middleware {
           `[DEBUG][${label}] stream params:`,
           summarizeParams(params),
         );
-      } catch {}
+      } catch { }
 
       const { stream, request, response } = await doStream();
 
@@ -195,17 +184,17 @@ function createDebugMiddleware(label: string): LanguageModelV2Middleware {
         } else {
           console.log(`[DEBUG][${label}] response: none`);
         }
-      } catch {}
+      } catch { }
 
       const transformed = new ReadableStream<any>({
         start: async (controller) => {
           const reader = stream.getReader();
-          for (;;) {
+          for (; ;) {
             const { value, done } = await reader.read();
             if (done) break;
             try {
               console.log(`[DEBUG][${label}] stream part:`, safeJson(value));
-            } catch {}
+            } catch { }
             controller.enqueue(value);
           }
           controller.close();
