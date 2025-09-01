@@ -1,0 +1,313 @@
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "intfloat/multilingual-e5-large-instruct",
+      "name": "Multilingual-E5-large-instruct",
+      "object": "model",
+      "created": 1745712000000,
+      "owned_by": "Intfloat",
+      "permission": [],
+      "root": "intfloat/multilingual-e5-large-instruct",
+      "parent": null,
+      "pricing": {
+        "input": 0.02,
+        "output": 0.02,
+        "unit": "€ / M Token",
+        "currency": "EUR"
+      },
+      "capabilities": {
+        "vision": false,
+        "function_calling": false,
+        "json_mode": false,
+        "classification": false,
+        "embeddings": false,
+        "formatted_output": false,
+        "streaming": true
+      },
+      "status": {
+        "up": true
+      }
+    },
+    {
+      "id": "BAAI/bge-reranker-v2-m3",
+      "name": "bge-reranker-v2-m3",
+      "object": "model",
+      "created": 1745366400000,
+      "owned_by": "BAAI",
+      "permission": [],
+      "root": "BAAI/bge-reranker-v2-m3",
+      "parent": null,
+      "pricing": {
+        "input": 0.1,
+        "output": 0.1,
+        "unit": "€ / M Token",
+        "currency": "EUR"
+      },
+      "capabilities": {
+        "vision": false,
+        "function_calling": false,
+        "json_mode": false,
+        "classification": false,
+        "embeddings": false,
+        "formatted_output": false,
+        "streaming": true
+      },
+      "status": {
+        "up": true
+      }
+    },
+    {
+      "id": "KBLab/kb-whisper-large",
+      "name": "KB-Whisper-Large",
+      "object": "model",
+      "created": 1745712000000,
+      "owned_by": "KB",
+      "permission": [],
+      "root": "KBLab/kb-whisper-large",
+      "parent": null,
+      "pricing": {
+        "input": 2,
+        "output": 2,
+        "unit": "€ / 1000 mins",
+        "currency": "EUR"
+      },
+      "capabilities": {
+        "vision": false,
+        "function_calling": true,
+        "json_mode": false,
+        "classification": false,
+        "embeddings": false,
+        "formatted_output": false,
+        "streaming": true
+      },
+      "status": {
+        "up": true
+      }
+    },
+    {
+      "id": "meta-llama/Llama-3.1-8B-Instruct",
+      "name": "Llama 3.1 8B Instruct",
+      "object": "model",
+      "created": 1745366400000,
+      "owned_by": "Meta",
+      "permission": [],
+      "root": "meta-llama/Llama-3.1-8B-Instruct",
+      "parent": null,
+      "pricing": {
+        "input": 0.1,
+        "output": 0.1,
+        "unit": "€ / M Token",
+        "currency": "EUR"
+      },
+      "capabilities": {
+        "vision": false,
+        "function_calling": true,
+        "json_mode": true,
+        "classification": false,
+        "embeddings": false,
+        "formatted_output": true,
+        "streaming": true
+      },
+      "status": {
+        "up": true
+      }
+    },
+    {
+      "id": "meta-llama/Llama-3.3-70B-Instruct",
+      "name": "Llama 3.3 70B Instruct",
+      "object": "model",
+      "created": 1745712000000,
+      "owned_by": "Meta",
+      "permission": [],
+      "root": "meta-llama/Llama-3.3-70B-Instruct",
+      "parent": null,
+      "pricing": {
+        "input": 0.9,
+        "output": 0.9,
+        "unit": "€ / M Token",
+        "currency": "EUR"
+      },
+      "capabilities": {
+        "vision": false,
+        "function_calling": true,
+        "json_mode": true,
+        "classification": false,
+        "embeddings": false,
+        "formatted_output": true,
+        "streaming": true
+      },
+      "status": {
+        "up": true
+      }
+    },
+    {
+      "id": "unsloth/MAI-DS-R1-GGUF",
+      "name": "DeepSeek R1 Microsoft AI Finetuned",
+      "object": "model",
+      "created": 1745366400000,
+      "owned_by": "Unsloth",
+      "permission": [],
+      "root": "unsloth/MAI-DS-R1-GGUF",
+      "parent": null,
+      "pricing": {
+        "input": 1.5,
+        "output": 1.5,
+        "unit": "€ / M Token",
+        "currency": "EUR"
+      },
+      "capabilities": {
+        "vision": false,
+        "function_calling": true,
+        "json_mode": true,
+        "classification": false,
+        "embeddings": false,
+        "formatted_output": true,
+        "streaming": true
+      },
+      "status": {
+        "up": true
+      }
+    },
+    {
+      "id": "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
+      "name": "Mistral Small 3.1 24B Instruct 2503",
+      "object": "model",
+      "created": 1745712000000,
+      "owned_by": "Mistral",
+      "permission": [],
+      "root": "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
+      "parent": null,
+      "pricing": {
+        "input": 0.3,
+        "output": 0.3,
+        "unit": "€ / M Token",
+        "currency": "EUR"
+      },
+      "capabilities": {
+        "vision": false,
+        "function_calling": true,
+        "json_mode": true,
+        "classification": false,
+        "embeddings": false,
+        "formatted_output": true,
+        "streaming": true
+      },
+      "status": {
+        "up": true
+      }
+    },
+    {
+      "id": "Qwen/Qwen3-32B",
+      "name": "Qwen3 32B",
+      "object": "model",
+      "created": 1745884800000,
+      "owned_by": "Qwen",
+      "permission": [],
+      "root": "Qwen/Qwen3-32B",
+      "parent": null,
+      "pricing": {
+        "input": 0.5,
+        "output": 0.5,
+        "unit": "€ / M Token",
+        "currency": "EUR"
+      },
+      "capabilities": {
+        "vision": false,
+        "function_calling": true,
+        "json_mode": true,
+        "classification": false,
+        "embeddings": false,
+        "formatted_output": true,
+        "streaming": true
+      },
+      "status": {
+        "up": true
+      }
+    },
+    {
+      "id": "mistralai/Devstral-Small-2505",
+      "name": "Devstral Small 2505",
+      "object": "model",
+      "created": 1747872000000,
+      "owned_by": "Mistral",
+      "permission": [],
+      "root": "mistralai/Devstral-Small-2505",
+      "parent": null,
+      "pricing": {
+        "input": 0.2,
+        "output": 0.4,
+        "unit": "€ / M Token",
+        "currency": "EUR"
+      },
+      "capabilities": {
+        "vision": false,
+        "function_calling": true,
+        "json_mode": true,
+        "classification": false,
+        "embeddings": false,
+        "formatted_output": true,
+        "streaming": true
+      },
+      "status": {
+        "up": true
+      }
+    },
+    {
+      "id": "mistralai/Magistral-Small-2506",
+      "name": "Magistral-Small-2506",
+      "object": "model",
+      "created": 0,
+      "owned_by": "Mistral",
+      "permission": [],
+      "root": "mistralai/Magistral-Small-2506",
+      "parent": null,
+      "pricing": {
+        "input": 0.5,
+        "output": 1.5,
+        "unit": "€ / M Token",
+        "currency": "EUR"
+      },
+      "capabilities": {
+        "vision": false,
+        "function_calling": false,
+        "json_mode": false,
+        "classification": false,
+        "embeddings": false,
+        "formatted_output": false,
+        "streaming": true
+      },
+      "status": {
+        "up": true
+      }
+    },
+    {
+      "id": "openai/gpt-oss-120b",
+      "name": "GPT-OSS-120B",
+      "object": "model",
+      "created": 1754352000000,
+      "owned_by": "OpenAI",
+      "permission": [],
+      "root": "openai/gpt-oss-120b",
+      "parent": null,
+      "pricing": {
+        "input": 0.3,
+        "output": 0.9,
+        "unit": "€ / M Token",
+        "currency": "EUR"
+      },
+      "capabilities": {
+        "vision": false,
+        "function_calling": true,
+        "json_mode": true,
+        "classification": false,
+        "embeddings": false,
+        "formatted_output": true,
+        "streaming": true
+      },
+      "status": {
+        "up": true
+      }
+    }
+  ]
+}

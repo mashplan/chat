@@ -158,6 +158,12 @@ export async function POST(request: Request) {
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt({ selectedChatModel, requestHints }),
           messages: convertToModelMessages(uiMessages),
+          toolChoice: 'auto',
+          providerOptions: {
+            openai: {
+              tool_choice: 'auto',
+            },
+          },
           stopWhen: stepCountIs(5),
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning' ||

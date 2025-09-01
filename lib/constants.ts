@@ -7,6 +7,8 @@ export const isTestEnvironment = Boolean(
     process.env.PLAYWRIGHT ||
     process.env.CI_PLAYWRIGHT,
 );
+export const isDebugEnabled =
+  process.env.DEBUG === 'true' || process.env.DEBUG === '1';
 
 export const guestRegex = /^guest-\d+$/;
 

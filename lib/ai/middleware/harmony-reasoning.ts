@@ -11,7 +11,13 @@ export function extractHarmonyReasoningMiddleware(): LanguageModelV2Middleware {
       const result = await doGenerate();
 
       // Function to extract content from Harmony format
-      const extractHarmonyContent = (text: string) => {
+      const extractHarmonyContent = (text: string | undefined) => {
+        if (!text) {
+          console.warn(
+            '[Harmony Middleware] No text provided, returning empty content',
+          );
+          return { reasoning: '', content: '' };
+        }
         console.log('[Harmony Middleware] Raw text:', text);
 
         // Pattern to match Harmony format messages
@@ -113,7 +119,7 @@ export function extractHarmonyReasoningMiddleware(): LanguageModelV2Middleware {
         (p: any) => p?.type !== 'text',
       ) as any[];
 
-      const originalText = originalTextParts.map((p) => p.text).join('');
+      const originalText = originalTextParts.map((p) => p?.text || '').join('');
 
       if (!originalText) {
         console.log('[Harmony Middleware] No text in result, returning as is');
