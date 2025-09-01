@@ -6,14 +6,16 @@ import {
 import { anthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { extractHarmonyReasoningMiddleware } from './middleware/harmony-reasoning';
+import type { LanguageModelV2Middleware } from '@ai-sdk/provider';
+// import { extractHarmonyReasoningMiddleware } from './middleware/harmony-reasoning';
 import {
   artifactModel,
   chatModel,
   reasoningModel,
   titleModel,
 } from './models.test';
-import { isTestEnvironment } from '../constants';
+import { isDebugEnabled, isTestEnvironment } from '../constants';
+import { BergetChatLanguageModel } from './providers/berget-provider';
 
 // Create OpenAI instance with explicit configuration
 const openaiProvider = createOpenAI({
@@ -27,12 +29,12 @@ if (!isTestEnvironment && !process.env.BERGET_AI_API_KEY) {
   );
 }
 
-// Berget AI provider configuration
+// Berget AI provider configuration (no custom fetch – Berget custom provider handles logic)
 const bergetAiProvider = createOpenAICompatible({
   name: 'berget-ai',
   apiKey: process.env.BERGET_AI_API_KEY || 'dummy-key-for-tests',
   baseURL: 'https://api.berget.ai/v1',
-  includeUsage: true, // Include usage information in streaming responses
+  includeUsage: true,
 });
 
 export const myProvider = isTestEnvironment
@@ -46,27 +48,62 @@ export const myProvider = isTestEnvironment
     })
   : customProvider({
       languageModels: {
-        'chat-model': anthropic('claude-sonnet-4-20250514'),
-        'chat-model-reasoning': wrapLanguageModel({
-          model: anthropic('claude-sonnet-4-20250514'),
-          middleware: extractReasoningMiddleware({ tagName: 'think' }),
-        }),
-        'title-model': anthropic('claude-sonnet-4-20250514'),
-        'artifact-model': anthropic('claude-sonnet-4-20250514'),
+        'chat-model': withDebug(
+          anthropic('claude-sonnet-4-20250514'),
+          'anthropic:claude-sonnet-4-20250514',
+        ),
+        'chat-model-reasoning': withDebug(
+          wrapLanguageModel({
+            model: anthropic('claude-sonnet-4-20250514'),
+            middleware: extractReasoningMiddleware({ tagName: 'think' }),
+          }),
+          'anthropic:claude-sonnet-4-20250514:reasoning',
+        ),
+        'title-model': withDebug(
+          anthropic('claude-sonnet-4-20250514'),
+          'anthropic:claude-sonnet-4-20250514:title',
+        ),
+        'artifact-model': withDebug(
+          anthropic('claude-sonnet-4-20250514'),
+          'anthropic:claude-sonnet-4-20250514:artifact',
+        ),
         // Berget AI models
-        'deepseek-r1': wrapLanguageModel({
-          model: bergetAiProvider('unsloth/MAI-DS-R1-GGUF'),
-          middleware: extractReasoningMiddleware({ tagName: 'think' }),
-        }),
-        'openai-gpt-oss-120b': bergetAiProvider('openai/gpt-oss-120b'),
-        // Temporarily disabled harmony middleware due to errors
-        // 'openai-gpt-oss-120b': wrapLanguageModel({
-        //   model: bergetAiProvider('openai/gpt-oss-120b'),
-        //   middleware: extractHarmonyReasoningMiddleware(),
-        // }),
-        'llama-chat': bergetAiProvider('meta-llama/Llama-3.3-70B-Instruct'),
-        'mistral-chat': bergetAiProvider(
-          'mistralai/Mistral-Small-3.1-24B-Instruct-2503',
+        'deepseek-r1': withDebug(
+          wrapLanguageModel({
+            model: bergetAiProvider('unsloth/MAI-DS-R1-GGUF'),
+            middleware: extractReasoningMiddleware({ tagName: 'think' }),
+          }),
+          'berget-ai:unsloth/MAI-DS-R1-GGUF',
+        ),
+        'openai-gpt-oss-120b': withDebug(
+          new BergetChatLanguageModel('openai/gpt-oss-120b', {
+            baseURL: 'https://api.berget.ai/v1',
+            provider: 'berget-ai',
+            headers: () => ({
+              Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
+            }),
+          }) as any,
+          'berget-ai:openai/gpt-oss-120b',
+        ),
+        'llama-chat': withDebug(
+          new BergetChatLanguageModel('meta-llama/Llama-3.3-70B-Instruct', {
+            baseURL: 'https://api.berget.ai/v1',
+            provider: 'berget-ai',
+            headers: () => ({
+              Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
+            }),
+          }) as any,
+          'berget-ai:meta-llama/Llama-3.3-70B-Instruct',
+        ),
+        'mistral-chat': withDebug(
+          new BergetChatLanguageModel('mistralai/Magistral-Small-2506', {
+            baseURL: 'https://api.berget.ai/v1',
+            provider: 'berget-ai',
+            headers: () => ({
+              Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
+            }),
+          }) as any,
+          'berget-ai:mistralai/Magistral-Small-2506',
         ),
       },
       imageModels: {
@@ -76,3 +113,121 @@ export const myProvider = isTestEnvironment
 
 // Export raw Berget AI provider for debugging endpoints
 export const bergetAi = bergetAiProvider;
+
+// Internal: wrap a model with debug logging if DEBUG is enabled
+function withDebug(model: any, label: string) {
+  if (!isDebugEnabled) return model;
+  return wrapLanguageModel({
+    model,
+    middleware: createDebugMiddleware(label),
+  });
+}
+
+function createDebugMiddleware(label: string): LanguageModelV2Middleware {
+  const safeJson = (obj: unknown) => {
+    try {
+      return JSON.stringify(obj);
+    } catch {
+      try {
+        return JSON.stringify(obj, (_k, v) =>
+          typeof v === 'bigint' ? v.toString() : v,
+        );
+      } catch {
+        return '[unserializable]';
+      }
+    }
+  };
+
+  return {
+    wrapGenerate: async ({ doGenerate, params }) => {
+      try {
+        console.log(
+          `[DEBUG][${label}] generate params:`,
+          summarizeParams(params),
+        );
+      } catch {}
+
+      const result = await doGenerate();
+
+      try {
+        console.log(`[DEBUG][${label}] generate result:`, safeJson(result));
+      } catch {}
+
+      return result;
+    },
+
+    wrapStream: async ({ doStream, params }) => {
+      try {
+        console.log(
+          `[DEBUG][${label}] stream params:`,
+          summarizeParams(params),
+        );
+      } catch {}
+
+      const { stream, request, response } = await doStream();
+
+      try {
+        if (request) {
+          const rq = request as unknown as {
+            headers?: Headers;
+            method?: string;
+            url?: string;
+          };
+          const headers: Record<string, string> = {};
+          rq.headers?.forEach((value: string, key: string) => {
+            if (key.toLowerCase() === 'authorization') return;
+            headers[key] = value;
+          });
+          console.log(`[DEBUG][${label}] request:`, {
+            url: rq.url,
+            method: rq.method,
+            headers,
+          });
+        } else {
+          console.log(`[DEBUG][${label}] request: none`);
+        }
+        if (response) {
+          const rs = response as unknown as Response;
+          console.log(`[DEBUG][${label}] response:`, {
+            status: (rs as any).status,
+            statusText: (rs as any).statusText,
+          });
+        } else {
+          console.log(`[DEBUG][${label}] response: none`);
+        }
+      } catch {}
+
+      const transformed = new ReadableStream<any>({
+        start: async (controller) => {
+          const reader = stream.getReader();
+          for (;;) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            try {
+              console.log(`[DEBUG][${label}] stream part:`, safeJson(value));
+            } catch {}
+            controller.enqueue(value);
+          }
+          controller.close();
+        },
+      });
+
+      return { stream: transformed, request, response };
+    },
+  };
+}
+
+function summarizeParams(params: unknown) {
+  try {
+    const p = params as any;
+    return {
+      hasSystem: typeof p?.system === 'string',
+      messagesLength: Array.isArray(p?.messages)
+        ? p.messages.length
+        : undefined,
+      toolCount: p?.tools ? Object.keys(p.tools).length : 0,
+    };
+  } catch {
+    return {};
+  }
+}
