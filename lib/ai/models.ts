@@ -9,14 +9,15 @@ export interface ChatModel {
 export const chatModels: Array<ChatModel> = [
   {
     id: 'chat-model',
-    name: 'Grok Vision',
-    description: 'Advanced multimodal model with vision and text capabilities',
+    name: 'Claude Sonnet 4',
+    description: 'Advanced multimodal model from Anthropic',
   },
-  {
-    id: 'chat-model-reasoning',
-    name: 'Grok Reasoning',
-    description: 'Uses advanced chain-of-thought reasoning for complex problems',
-  },
+  // {
+  //   id: 'chat-model-reasoning',
+  //   name: 'DeepSeek R1 (via Berget AI)',
+  //   description:
+  //     'DeepSeek R1 reasoning model via Berget AI - excellent for math, coding, and complex reasoning tasks',
+  // },
   {
     id: 'deepseek-r1',
     name: 'DeepSeek R1 (via Berget AI)',
