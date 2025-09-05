@@ -167,18 +167,18 @@ export async function POST(request: Request) {
           stopWhen: stepCountIs(5),
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning' ||
-            selectedChatModel === 'deepseek-r1' ||
-            selectedChatModel === 'openai-gpt-oss-120b'
+              selectedChatModel === 'deepseek-r1' ||
+              selectedChatModel === 'openai-gpt-oss-120b'
               ? []
               : [
-                  'getWeather',
-                  'searchWeb',
-                  'scrapeUrl',
-                  'createDocument',
-                  'updateDocument',
-                  'requestSuggestions',
-                  'generateImageTool',
-                ],
+                'getWeather',
+                'searchWeb',
+                'scrapeUrl',
+                'createDocument',
+                'updateDocument',
+                'requestSuggestions',
+                'generateImageTool',
+              ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           tools: {
             getWeather,
@@ -240,16 +240,9 @@ export async function POST(request: Request) {
     if (error instanceof ChatSDKError) {
       return error.toResponse();
     }
-    // Return a proper error response for other errors
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'An error occurred',
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
+
+    console.error('Unhandled error in chat API:', error);
+    return new ChatSDKError('offline:chat').toResponse();
   }
 }
 

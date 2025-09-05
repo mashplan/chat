@@ -8,6 +8,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModelV2Middleware } from '@ai-sdk/provider';
 // import { extractHarmonyReasoningMiddleware } from './middleware/harmony-reasoning';
+// import { gateway } from '@ai-sdk/gateway';
 import {
   artifactModel,
   chatModel,
@@ -48,25 +49,22 @@ export const myProvider = isTestEnvironment
     })
   : customProvider({
       languageModels: {
-        'chat-model': withDebug(
-          anthropic('claude-sonnet-4-20250514'),
-          'anthropic:claude-sonnet-4-20250514',
-        ),
-        'chat-model-reasoning': withDebug(
-          wrapLanguageModel({
-            model: anthropic('claude-sonnet-4-20250514'),
-            middleware: extractReasoningMiddleware({ tagName: 'think' }),
-          }),
-          'anthropic:claude-sonnet-4-20250514:reasoning',
-        ),
+        'chat-model': anthropic('claude-sonnet-4-20250514'),
+        'chat-model-reasoning': wrapLanguageModel({
+          model: bergetAiProvider('unsloth/MAI-DS-R1-GGUF'),
+          middleware: extractReasoningMiddleware({ tagName: 'think' }),
+        }),
         'title-model': withDebug(
-          anthropic('claude-sonnet-4-20250514'),
-          'anthropic:claude-sonnet-4-20250514:title',
+          new BergetChatLanguageModel('mistralai/Magistral-Small-2506', {
+            baseURL: 'https://api.berget.ai/v1',
+            provider: 'berget-ai',
+            headers: () => ({
+              Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
+            }),
+          }) as any,
+          'berget-ai:mistralai/Magistral-Small-2506',
         ),
-        'artifact-model': withDebug(
-          anthropic('claude-sonnet-4-20250514'),
-          'anthropic:claude-sonnet-4-20250514:artifact',
-        ),
+        'artifact-model': anthropic('claude-sonnet-4-20250514'),
         // Berget AI models
         'deepseek-r1': withDebug(
           wrapLanguageModel({
