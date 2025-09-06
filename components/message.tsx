@@ -1,5 +1,4 @@
 'use client';
-import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useState } from 'react';
 import type { Vote } from '@/lib/db/schema';
@@ -107,6 +106,19 @@ const PurePreviewMessage = ({
                 ))}
               </div>
             )}
+
+            {message.role === 'assistant' &&
+              isLoading &&
+              (message.parts?.length ?? 0) === 0 && (
+                <MessageContent className="bg-transparent -ml-4">
+                  <div className="text-muted-foreground flex items-center gap-2">
+                    <span className="animate-spin inline-flex">
+                      <LoaderIcon size={14} />
+                    </span>
+                    Preparing response...
+                  </div>
+                </MessageContent>
+              )}
 
             {message.parts?.map((part, index) => {
               const { type } = part;
