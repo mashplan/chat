@@ -40,6 +40,12 @@ export const chatModels: Array<ChatModel> = [
     id: 'mistral-chat',
     name: 'Mistral Magistral Small 2506 (via Berget AI)',
     description:
-      'Mistral Magistral Small 2506 model via Berget AI - fast and efficient with excellent tool support',
+      'Mistral Magistral Small 2506 model via Berget AI - fast and efficient',
+  },
+  {
+    id: 'qwen3-32b',
+    name: 'Qwen3 32B (via Berget AI)',
+    description:
+      'Qwen3 32B model via Berget AI - strong reasoning and tool use',
   },
 ];

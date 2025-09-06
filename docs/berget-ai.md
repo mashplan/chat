@@ -58,4 +58,85 @@ Notes & limitations
 - Tool behavior depends on the specific Berget endpoint for a model; GPT‑OSS currently rejects tools on Berget even though the base model supports tools elsewhere.
 - If you add new project tools, extend the mapper in `buildBergetToolSchemas` inside `berget-provider.ts`.
 
+### Add another Berget model
+
+Follow these steps to add a new chat model backed by Berget AI. This ensures the model is selectable in the UI, allowed by the API schema, wired to the custom provider, and—if supported—receives tool schemas.
+
+1) Register the model with the provider
+
+- File: `lib/ai/providers.ts`
+- Add a new entry under `languageModels` using `new BergetChatLanguageModel('<BERGET_MODEL_ID>', { baseURL: 'https://api.berget.ai/v1', provider: 'berget-ai', headers: () => ({ Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}` }) })`.
+  Example (Qwen3 32B):
+  ```ts
+  'qwen3-32b': new BergetChatLanguageModel('Qwen/Qwen3-32B', {
+    baseURL: 'https://api.berget.ai/v1',
+    provider: 'berget-ai',
+    headers: () => ({
+      Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
+    }),
+  }) as any,
+  ```
+
+2) Allow the model in the chat request schema
+
+- File: `app/(chat)/api/chat/schema.ts`
+- Add the model id to the `selectedChatModel` enum so the request is accepted by the API route.
+  ```ts
+  selectedChatModel: z.enum([
+    'chat-model',
+    'chat-model-reasoning',
+    'deepseek-r1',
+    'openai-gpt-oss-120b',
+    'llama-chat',
+    'mistral-chat',
+    'qwen3-32b', // <- new
+  ]),
+  ```
+
+3) Expose the model in the UI selector
+
+- File: `lib/ai/models.ts`
+- Add an entry to `chatModels` with `id`, `name`, and `description` so it appears in the model dropdown.
+  ```ts
+  {
+    id: 'qwen3-32b',
+    name: 'Qwen3 32B (via Berget AI)',
+    description: 'Qwen3 32B model via Berget AI - strong reasoning and tool use',
+  },
+  ```
+
+4) Gate tool-calling support (only for models that truly support tools)
+
+- File: `lib/ai/providers/berget-provider.ts`
+- Add the Berget model id to `TOOL_SUPPORTED_MODELS` if and only if tool calling works for that endpoint. If tools are not supported, do not add it—the provider will automatically omit `tools/functions` to avoid 400 errors.
+  ```ts
+  const TOOL_SUPPORTED_MODELS = new Set<string>([
+    'meta-llama/Llama-3.1-8B-Instruct',
+    'meta-llama/Llama-3.3-70B-Instruct',
+    'mistralai/Devstral-Small-2505',
+    'mistralai/Magistral-Small-2506',
+    'Qwen/Qwen3-32B', // add here only if verified
+  ]);
+  ```
+
+5) Verify with the probe scripts
+
+- Run the standalone probe against Berget to confirm behavior before and after wiring:
+  ```bash
+  # Single request with a function tool
+  BERGET_AI_API_KEY=sk-... pnpm test:berget:tools -- --model Qwen/Qwen3-32B --tools
+
+  # Scan all known Berget models listed in docs/external/berget-ai-models.json
+  BERGET_AI_API_KEY=sk-... pnpm scan:berget:tools
+  ```
+- If the model returns 400 when tools are present, remove it from `TOOL_SUPPORTED_MODELS` to disable tools for that model.
+
+6) Environment
+
+- Ensure `BERGET_AI_API_KEY` is set in the runtime environment:
+  ```env
+  BERGET_AI_API_KEY=your_api_key
+  ```
+
+That’s it—after these edits the model will be selectable, requests will validate, and tools will be sent only when the model/endpoint actually supports them.
 

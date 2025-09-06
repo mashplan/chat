@@ -103,6 +103,17 @@ export const myProvider = isTestEnvironment
           }) as any,
           'berget-ai:mistralai/Magistral-Small-2506',
         ),
+        // Qwen 3 32B via Berget AI
+        'qwen3-32b': withDebug(
+          new BergetChatLanguageModel('Qwen/Qwen3-32B', {
+            baseURL: 'https://api.berget.ai/v1',
+            provider: 'berget-ai',
+            headers: () => ({
+              Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
+            }),
+          }) as any,
+          'berget-ai:Qwen/Qwen3-32B',
+        ),
       },
       imageModels: {
         'small-model': openaiProvider.imageModel('dall-e-3'),

@@ -64,6 +64,7 @@ export class BergetChatLanguageModel implements LanguageModelV2 {
       'meta-llama/Llama-3.3-70B-Instruct',
       'mistralai/Devstral-Small-2505',
       'mistralai/Magistral-Small-2506',
+      'Qwen/Qwen3-32B',
     ]);
 
     let tools: any[] | undefined;

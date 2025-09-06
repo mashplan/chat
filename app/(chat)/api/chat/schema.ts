@@ -28,6 +28,7 @@ export const postRequestBodySchema = z.object({
     'openai-gpt-oss-120b',
     'llama-chat',
     'mistral-chat',
+    'qwen3-32b',
   ]),
   selectedVisibilityType: z.enum(['public', 'private']),
 });
