@@ -3,7 +3,7 @@ import { useCopyToClipboard } from 'usehooks-ts';
 
 import type { Vote } from '@/lib/db/schema';
 
-import { CopyIcon, ThumbDownIcon, ThumbUpIcon } from './icons';
+import { CopyIcon, ThumbDownIcon, ThumbUpIcon, PencilEditIcon } from './icons';
 import { Actions, Action } from './elements/actions';
 import { memo } from 'react';
 import equal from 'fast-deep-equal';
@@ -15,38 +15,60 @@ export function PureMessageActions({
   message,
   vote,
   isLoading,
+  setMode,
 }: {
   chatId: string;
   message: ChatMessage;
   vote: Vote | undefined;
   isLoading: boolean;
+  setMode?: (mode: 'view' | 'edit') => void;
 }) {
   const { mutate } = useSWRConfig();
   const [_, copyToClipboard] = useCopyToClipboard();
 
   if (isLoading) return null;
-  if (message.role === 'user') return null;
+
+  const textFromParts = message.parts
+    ?.filter((part) => part.type === 'text')
+    .map((part) => part.text)
+    .join('\n')
+    .trim();
+
+  const handleCopy = async () => {
+    if (!textFromParts) {
+      toast.error("There's no text to copy!");
+      return;
+    }
+
+    await copyToClipboard(textFromParts);
+    toast.success('Copied to clipboard!');
+  };
+
+  // User messages get edit (on hover) and copy actions
+  if (message.role === 'user') {
+    return (
+      <Actions className="justify-end -mr-0.5">
+        <div className="relative">
+          {setMode && (
+            <Action
+              tooltip="Edit"
+              onClick={() => setMode('edit')}
+              className="absolute top-0 -left-10 opacity-0 transition-opacity group-hover/message:opacity-100"
+            >
+              <PencilEditIcon />
+            </Action>
+          )}
+          <Action tooltip="Copy" onClick={handleCopy}>
+            <CopyIcon />
+          </Action>
+        </div>
+      </Actions>
+    );
+  }
 
   return (
-    <Actions>
-      <Action
-        tooltip="Copy"
-        onClick={async () => {
-          const textFromParts = message.parts
-            ?.filter((part) => part.type === 'text')
-            .map((part) => part.text)
-            .join('\n')
-            .trim();
-
-          if (!textFromParts) {
-            toast.error("There's no text to copy!");
-            return;
-          }
-
-          await copyToClipboard(textFromParts);
-          toast.success('Copied to clipboard!');
-        }}
-      >
+    <Actions className="-ml-0.5">
+      <Action tooltip="Copy" onClick={handleCopy}>
         <CopyIcon />
       </Action>
 
