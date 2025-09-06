@@ -2,11 +2,9 @@ import type {
   LanguageModelV2,
   LanguageModelV2CallOptions,
   LanguageModelV2Content,
-  LanguageModelV2StreamPart,
   LanguageModelV2CallWarning,
 } from '@ai-sdk/provider';
 import { APICallError } from '@ai-sdk/provider';
-import { isDebugEnabled } from '@/lib/constants';
 
 export interface BergetConfig {
   baseURL: string;
@@ -58,14 +56,9 @@ export class BergetChatLanguageModel implements LanguageModelV2 {
       return { role: m.role, content: '' };
     });
 
-    // Prepare tools/functions only for Berget models that support tool-calling
-    const TOOL_SUPPORTED_MODELS = new Set<string>([
-      'meta-llama/Llama-3.1-8B-Instruct',
-      'meta-llama/Llama-3.3-70B-Instruct',
-      'mistralai/Devstral-Small-2505',
-      'mistralai/Magistral-Small-2506',
-      'Qwen/Qwen3-32B',
-    ]);
+    // Tool calling is currently disabled for all Berget endpoints in chat.
+    // Set remains empty until models reliably support tools in our flow.
+    const TOOL_SUPPORTED_MODELS = new Set<string>([]);
 
     let tools: any[] | undefined;
     let functions: any[] | undefined;
@@ -231,127 +224,6 @@ export class BergetChatLanguageModel implements LanguageModelV2 {
       response: res as any,
     } as any;
   }
-}
-
-function splitSseLines(): TransformStream<string, string> {
-  let buffer = '';
-  return new TransformStream<string, string>({
-    transform(chunk: string, controller) {
-      buffer += chunk;
-      let idx: number;
-      while (true) {
-        idx = buffer.indexOf('\n');
-        if (idx === -1) break;
-        const line = buffer.slice(0, idx);
-        buffer = buffer.slice(idx + 1);
-        controller.enqueue(line);
-      }
-    },
-    flush(controller) {
-      if (buffer) controller.enqueue(buffer);
-    },
-  });
-}
-
-function parseSseMessages(): TransformStream<string, any> {
-  /* Accumulates multi-line SSE messages and emits parsed JSON per message. */
-  let dataBuffer = '';
-  return new TransformStream<string, any>({
-    transform(line: string, controller) {
-      const trimmed = line.replace(/\r$/, '');
-      if (trimmed === '') {
-        // end of one SSE message
-        if (dataBuffer) {
-          const payload = dataBuffer.trim();
-          if (payload === '[DONE]') {
-            controller.enqueue({ done: true });
-          } else {
-            try {
-              controller.enqueue(JSON.parse(payload));
-              if (isDebugEnabled) {
-                console.log('[Berget SSE message]', payload.slice(0, 500));
-              }
-            } catch {
-              // ignore malformed message
-            }
-          }
-          dataBuffer = '';
-        }
-        return;
-      }
-
-      if (trimmed.startsWith('data:')) {
-        dataBuffer += trimmed.slice(5).trim();
-      } else {
-        // tolerate other SSE fields (event:, id:, retry:)
-      }
-    },
-    flush(controller) {
-      if (dataBuffer) {
-        const payload = dataBuffer.trim();
-        if (payload !== '[DONE]') {
-          try {
-            controller.enqueue(JSON.parse(payload));
-            if (isDebugEnabled) {
-              console.log('[Berget SSE message]', payload.slice(0, 500));
-            }
-          } catch {}
-        } else {
-          controller.enqueue({ done: true });
-        }
-      }
-    },
-  });
-}
-
-function bergetToAiSdkParts(
-  warnings: LanguageModelV2CallWarning[],
-): TransformStream<any, LanguageModelV2StreamPart> {
-  let sentStart = false;
-  return new TransformStream<any, LanguageModelV2StreamPart>({
-    transform(chunk: any, controller) {
-      if (!sentStart) {
-        controller.enqueue({ type: 'stream-start', warnings });
-        sentStart = true;
-      }
-
-      // OpenAI-style delta
-      const choice = chunk?.choices?.[0];
-      const delta = choice?.delta ?? choice?.message;
-      if (delta?.content) {
-        controller.enqueue({
-          type: 'text-delta',
-          id: 't',
-          delta: String(delta.content),
-        } as any);
-      }
-      if (Array.isArray(delta?.tool_calls)) {
-        for (const tc of delta.tool_calls) {
-          controller.enqueue({
-            type: 'tool-call-delta',
-            toolCallId: tc.id ?? 'tc',
-            toolName: tc.function?.name,
-            argsTextDelta:
-              typeof tc.function?.arguments === 'string'
-                ? tc.function.arguments
-                : JSON.stringify(tc.function?.arguments ?? {}),
-          } as any);
-        }
-      }
-
-      if (choice?.finish_reason) {
-        controller.enqueue({
-          type: 'finish',
-          finishReason: choice.finish_reason,
-          usage: {
-            inputTokens: chunk?.usage?.prompt_tokens,
-            outputTokens: chunk?.usage?.completion_tokens,
-            totalTokens: chunk?.usage?.total_tokens,
-          },
-        });
-      }
-    },
-  });
 }
 
 // Build provider-compatible tool schemas from our known tool names.

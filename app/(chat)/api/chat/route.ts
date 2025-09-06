@@ -167,18 +167,18 @@ export async function POST(request: Request) {
           stopWhen: stepCountIs(5),
           experimental_activeTools:
             selectedChatModel === 'chat-model-reasoning' ||
-              selectedChatModel === 'deepseek-r1' ||
-              selectedChatModel === 'openai-gpt-oss-120b'
+            selectedChatModel === 'deepseek-r1' ||
+            selectedChatModel === 'openai-gpt-oss-120b'
               ? []
               : [
-                'getWeather',
-                'searchWeb',
-                'scrapeUrl',
-                'createDocument',
-                'updateDocument',
-                'requestSuggestions',
-                'generateImageTool',
-              ],
+                  'getWeather',
+                  'searchWeb',
+                  'scrapeUrl',
+                  'createDocument',
+                  'updateDocument',
+                  'requestSuggestions',
+                  'generateImageTool',
+                ],
           experimental_transform: smoothStream({ chunking: 'word' }),
           tools: {
             getWeather,
