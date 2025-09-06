@@ -149,7 +149,163 @@ export class BergetChatLanguageModel implements LanguageModelV2 {
   async doStream(options: LanguageModelV2CallOptions) {
     const { body, warnings } = this.buildBody(options);
 
-    // Force non-streaming for stability; synthesize stream parts for UI
+    const SSE_ALLOWED_MODELS = new Set<string>([
+      'Qwen/Qwen3-32B',
+      'openai/gpt-oss-120b',
+    ]);
+    const trySse = SSE_ALLOWED_MODELS.has(this.modelId);
+
+    if (trySse) {
+      try {
+        const res = await fetch(`${this.config.baseURL}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...this.config.headers(),
+          },
+          body: JSON.stringify({ ...body, stream: true }),
+          signal: options.abortSignal,
+        });
+
+        // If not ok or not event-stream, fallback below
+        const contentType = res.headers.get('content-type') || '';
+        if (!res.ok || !contentType.includes('text/event-stream')) {
+          throw new Error(`No SSE: ${res.status} ${contentType}`);
+        }
+
+        const reader = (res.body as any).getReader();
+        let buffered = '';
+        let sentStart = false;
+        let textOpen = false;
+        let reasoningOpen = false;
+        const stream = new ReadableStream<any>({
+          async pull(controller) {
+            const { value, done } = await reader.read();
+            if (done) {
+              if (reasoningOpen) {
+                controller.enqueue({ type: 'reasoning-end', id: 'r' });
+                reasoningOpen = false;
+              }
+              if (textOpen) {
+                controller.enqueue({ type: 'text-end', id: 't' });
+                textOpen = false;
+              }
+              controller.enqueue({ type: 'finish', finishReason: 'stop' });
+              controller.close();
+              return;
+            }
+            buffered += new TextDecoder().decode(value);
+            const lines = buffered.split('\n');
+            buffered = lines.pop() ?? '';
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed.startsWith('data:')) continue;
+              const payload = trimmed.slice(5).trim();
+              if (payload === '' || payload === '[DONE]') continue;
+              let json: any;
+              try {
+                json = JSON.parse(payload);
+              } catch {
+                continue;
+              }
+              const choice = json?.choices?.[0];
+              const delta = choice?.delta ?? choice?.message;
+              // GPT-OSS Responses-style: sometimes emits { output_text: ".." }
+              // Normalize to content for downstream handling.
+              if (!delta?.content && typeof json?.output_text === 'string') {
+                delta.content = json.output_text;
+              }
+              if (!sentStart) {
+                controller.enqueue({ type: 'stream-start', warnings });
+                sentStart = true;
+              }
+              const raw =
+                typeof delta?.content === 'string' ? delta.content : '';
+              if (!raw) continue;
+
+              let content = raw;
+              while (content.length) {
+                if (reasoningOpen) {
+                  const closeIdx = content.indexOf('</think>');
+                  if (closeIdx !== -1) {
+                    const part = content.slice(0, closeIdx);
+                    if (part) {
+                      controller.enqueue({
+                        type: 'reasoning-delta',
+                        id: 'r',
+                        delta: part,
+                      });
+                    }
+                    controller.enqueue({ type: 'reasoning-end', id: 'r' });
+                    reasoningOpen = false;
+                    content = content.slice(closeIdx + 8);
+                    continue;
+                  } else {
+                    controller.enqueue({
+                      type: 'reasoning-delta',
+                      id: 'r',
+                      delta: content,
+                    });
+                    content = '';
+                    continue;
+                  }
+                } else {
+                  const openIdx = content.indexOf('<think>');
+                  if (openIdx !== -1) {
+                    const before = content.slice(0, openIdx);
+                    if (before) {
+                      if (!textOpen) {
+                        controller.enqueue({ type: 'text-start', id: 't' });
+                        textOpen = true;
+                      }
+                      controller.enqueue({
+                        type: 'text-delta',
+                        id: 't',
+                        delta: before,
+                      });
+                    }
+                    controller.enqueue({ type: 'reasoning-start', id: 'r' });
+                    reasoningOpen = true;
+                    content = content.slice(openIdx + 7);
+                    continue;
+                  }
+                  const closeIdx = content.indexOf('</think>');
+                  if (closeIdx !== -1) {
+                    // stray close without open: drop the tag and continue
+                    content = content.slice(closeIdx + 8);
+                    continue;
+                  }
+                  // plain text
+                  if (content) {
+                    if (!textOpen) {
+                      controller.enqueue({ type: 'text-start', id: 't' });
+                      textOpen = true;
+                    }
+                    controller.enqueue({
+                      type: 'text-delta',
+                      id: 't',
+                      delta: content,
+                    });
+                    content = '';
+                  }
+                }
+              }
+            }
+          },
+        });
+
+        return {
+          stream,
+          warnings,
+          request: { body: { ...body, stream: true } },
+          response: res as any,
+        } as any;
+      } catch {
+        // fall through to non-streaming synthesis
+      }
+    }
+
+    // Fallback: non-streaming + synthesize parts
     const res = await fetch(`${this.config.baseURL}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...this.config.headers() },
@@ -191,27 +347,9 @@ export class BergetChatLanguageModel implements LanguageModelV2 {
           controller.enqueue({ type: 'text-delta', id: 't', delta: finalText });
           controller.enqueue({ type: 'text-end', id: 't' });
         }
-        if (Array.isArray(msg?.tool_calls)) {
-          for (const tc of msg.tool_calls) {
-            controller.enqueue({
-              type: 'tool-call-delta',
-              toolCallId: tc.id ?? 'tc',
-              toolName: tc.function?.name,
-              argsTextDelta:
-                typeof tc.function?.arguments === 'string'
-                  ? tc.function.arguments
-                  : JSON.stringify(tc.function?.arguments ?? {}),
-            });
-          }
-        }
         controller.enqueue({
           type: 'finish',
           finishReason: choice?.finish_reason ?? 'stop',
-          usage: {
-            inputTokens: json?.usage?.prompt_tokens,
-            outputTokens: json?.usage?.completion_tokens,
-            totalTokens: json?.usage?.total_tokens,
-          },
         });
         controller.close();
       },
@@ -220,7 +358,7 @@ export class BergetChatLanguageModel implements LanguageModelV2 {
     return {
       stream,
       warnings,
-      request: { body: { ...body, stream: true } },
+      request: { body: { ...body, stream: false } },
       response: res as any,
     } as any;
   }
