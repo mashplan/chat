@@ -8,7 +8,6 @@ import { DataStreamHandler } from '@/components/data-stream-handler';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
 import { isMultiModelChooseEnabled } from '@/lib/constants';
 import { convertToUIMessages } from '@/lib/utils';
-import { LanguageModelV2Usage } from '@ai-sdk/provider';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
