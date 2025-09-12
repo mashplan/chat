@@ -28,7 +28,7 @@ import {
   PromptInputModelSelectTrigger,
   PromptInputModelSelectContent,
 } from './elements/prompt-input';
-import { SelectItem, SelectValue } from '@/components/ui/select';
+import { SelectItem } from '@/components/ui/select';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -269,9 +269,9 @@ function PureMultimodalInput({
           event.preventDefault();
           if (status !== 'ready') {
             toast.error('Please wait for the model to finish its response!');
-          } else {
-            submitForm();
+            return;
           }
+          submitForm();
         }}
       >
         {(attachments.length > 0 || uploadQueue.length > 0) && (
@@ -317,7 +317,7 @@ function PureMultimodalInput({
           minHeight={72}
           maxHeight={200}
           disableAutoResize={true}
-          className="text-base resize-none py-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] bg-transparent !border-0 !border-none outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none"
+          className="text-base resize-none p-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] bg-transparent !border-0 !border-none outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none"
           rows={1}
           autoFocus
         />

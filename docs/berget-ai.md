@@ -11,7 +11,7 @@ BERGET_AI_API_KEY=your_api_key
 Key files
 
 - `lib/ai/providers/berget-provider.ts` — custom provider (payload shaping, tool support, reasoning extraction, stream synthesis)
-- `lib/ai/providers.ts` — wires Berget models to the custom provider
+- `lib/ai/providers.ts` — currently wires most Berget models via OpenAI‑compatible provider; OpenAi OSS model is routed through the custom provider for fallback synthesis.
 
 Models and capabilities (verified)
 
@@ -39,7 +39,20 @@ Reasoning UI
 
 Streaming
 
-- If Berget responds with SSE in an unexpected shape, the provider can synthesize a stream from a non‑streaming JSON response so the UI still renders deltas.
+- If Berget responds with SSE in an unexpected shape, the custom provider can synthesize a stream from a non‑streaming JSON response so the UI still renders deltas.
+
+Model routing and current behavior
+
+- Llama 3.3 70B and Magistral Small 2506: use the OpenAI‑compatible provider; stream text normally; reasoning is handled by middleware.
+- Qwen3 32B: OpenAI‑compatible provider; streams thinking and text; reasoning middleware extracts `<think>` when present.
+- OpenAI GPT‑OSS 120B: uses the custom Berget provider with a non‑streaming fallback and synthesized stream because the OpenAI‑compatible path frequently emits only `finish` without deltas. UI workaround added to allow follow‑ups if a stream gets stuck.
+
+Known limitation (OSS)
+
+- On OpenAI‑compatible streaming, GPT‑OSS sometimes sends a `finish` without any prior deltas, which can leave clients waiting. We added:
+  - Provider fallback: if no deltas arrive, perform a non‑streaming request and synthesize reasoning/text.
+  - UI workaround: when submitting a follow‑up on OSS while status is not `ready`, we call `stop()` then immediately submit to clear any stale stream state.
+  - A support ticket (`docs/support-tickets/berget-oss-streaming-ticket.md`) requesting standardized streaming for OSS.
 
 Debugging & scripts
 

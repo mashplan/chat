@@ -7,7 +7,6 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModelV2Middleware } from '@ai-sdk/provider';
-// import { extractHarmonyReasoningMiddleware } from './middleware/harmony-reasoning';
 // import { gateway } from '@ai-sdk/gateway';
 import {
   artifactModel,
@@ -16,7 +15,6 @@ import {
   titleModel,
 } from './models.test';
 import { isDebugEnabled, isTestEnvironment } from '../constants';
-import { BergetChatLanguageModel } from './providers/berget-provider';
 
 // Create OpenAI instance with explicit configuration
 const openaiProvider = createOpenAI({
@@ -55,13 +53,7 @@ export const myProvider = isTestEnvironment
           middleware: extractReasoningMiddleware({ tagName: 'think' }),
         }),
         'title-model': withDebug(
-          new BergetChatLanguageModel('mistralai/Magistral-Small-2506', {
-            baseURL: 'https://api.berget.ai/v1',
-            provider: 'berget-ai',
-            headers: () => ({
-              Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
-            }),
-          }) as any,
+          bergetAiProvider('mistralai/Magistral-Small-2506'),
           'berget-ai:mistralai/Magistral-Small-2506',
         ),
         'artifact-model': anthropic('claude-sonnet-4-20250514'),
@@ -74,44 +66,26 @@ export const myProvider = isTestEnvironment
           'berget-ai:unsloth/MAI-DS-R1-GGUF',
         ),
         'openai-gpt-oss-120b': withDebug(
-          new BergetChatLanguageModel('openai/gpt-oss-120b', {
-            baseURL: 'https://api.berget.ai/v1',
-            provider: 'berget-ai',
-            headers: () => ({
-              Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
-            }),
-          }) as any,
+          wrapLanguageModel({
+            model: bergetAiProvider('openai/gpt-oss-120b'),
+            middleware: extractReasoningMiddleware({ tagName: 'think' }),
+          }),
           'berget-ai:openai/gpt-oss-120b',
         ),
         'llama-chat': withDebug(
-          new BergetChatLanguageModel('meta-llama/Llama-3.3-70B-Instruct', {
-            baseURL: 'https://api.berget.ai/v1',
-            provider: 'berget-ai',
-            headers: () => ({
-              Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
-            }),
-          }) as any,
+          bergetAiProvider('meta-llama/Llama-3.3-70B-Instruct'),
           'berget-ai:meta-llama/Llama-3.3-70B-Instruct',
         ),
         'mistral-chat': withDebug(
-          new BergetChatLanguageModel('mistralai/Magistral-Small-2506', {
-            baseURL: 'https://api.berget.ai/v1',
-            provider: 'berget-ai',
-            headers: () => ({
-              Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
-            }),
-          }) as any,
+          bergetAiProvider('mistralai/Magistral-Small-2506'),
           'berget-ai:mistralai/Magistral-Small-2506',
         ),
         // Qwen 3 32B via Berget AI
         'qwen3-32b': withDebug(
-          new BergetChatLanguageModel('Qwen/Qwen3-32B', {
-            baseURL: 'https://api.berget.ai/v1',
-            provider: 'berget-ai',
-            headers: () => ({
-              Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
-            }),
-          }) as any,
+          wrapLanguageModel({
+            model: bergetAiProvider('Qwen/Qwen3-32B'),
+            middleware: extractReasoningMiddleware({ tagName: 'think' }),
+          }),
           'berget-ai:Qwen/Qwen3-32B',
         ),
       },
