@@ -68,6 +68,7 @@ function PureArtifact({
   isReadonly,
   selectedVisibilityType,
   selectedModelId,
+  isMultiModelChooseEnabled,
 }: {
   chatId: string;
   input: string;
@@ -84,6 +85,7 @@ function PureArtifact({
   isReadonly: boolean;
   selectedVisibilityType: VisibilityType;
   selectedModelId: string;
+  isMultiModelChooseEnabled?: boolean;
 }) {
   const { artifact, setArtifact, metadata, setMetadata } = useArtifact();
 
@@ -339,6 +341,7 @@ function PureArtifact({
                     setMessages={setMessages}
                     selectedVisibilityType={selectedVisibilityType}
                     selectedModelId={selectedModelId}
+                    isMultiModelChooseEnabled={isMultiModelChooseEnabled}
                   />
                 </div>
               </div>

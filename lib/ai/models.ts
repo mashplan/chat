@@ -1,4 +1,9 @@
-export const DEFAULT_CHAT_MODEL: string = 'chat-model';
+import { isMultiModelChooseEnabled } from '@/lib/constants';
+
+export const FORCED_CHAT_MODEL_ID: string = 'openai-gpt-oss-120b';
+export const DEFAULT_CHAT_MODEL: string = isMultiModelChooseEnabled
+  ? 'chat-model'
+  : FORCED_CHAT_MODEL_ID;
 
 export interface ChatModel {
   id: string;

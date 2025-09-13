@@ -6,6 +6,7 @@ import { Chat } from '@/components/chat';
 import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 import { DataStreamHandler } from '@/components/data-stream-handler';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
+import { isMultiModelChooseEnabled } from '@/lib/constants';
 import { convertToUIMessages } from '@/lib/utils';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
@@ -41,6 +42,24 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
   const cookieStore = await cookies();
   const chatModelFromCookie = cookieStore.get('chat-model');
+
+  if (!isMultiModelChooseEnabled) {
+    return (
+      <>
+        <Chat
+          id={chat.id}
+          initialMessages={uiMessages}
+          initialChatModel={DEFAULT_CHAT_MODEL}
+          initialVisibilityType={chat.visibility}
+          isReadonly={session?.user?.id !== chat.userId}
+          session={session}
+          autoResume={true}
+          isMultiModelChooseEnabled={isMultiModelChooseEnabled}
+        />
+        <DataStreamHandler />
+      </>
+    );
+  }
 
   if (!chatModelFromCookie) {
     return (

@@ -26,8 +26,12 @@ import { getWeather } from '@/lib/ai/tools/get-weather';
 import { generateImageTool } from '@/lib/ai/tools/generate-image';
 import { searchWeb } from '@/lib/ai/tools/search-web';
 import { scrapeUrl } from '@/lib/ai/tools/scrape-url';
-import { isProductionEnvironment } from '@/lib/constants';
+import {
+  isProductionEnvironment,
+  isMultiModelChooseEnabled,
+} from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
+import { FORCED_CHAT_MODEL_ID } from '@/lib/ai/models';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
@@ -154,9 +158,15 @@ export async function POST(request: Request) {
 
     const stream = createUIMessageStream({
       execute: ({ writer: dataStream }) => {
+        const effectiveModelId = isMultiModelChooseEnabled
+          ? selectedChatModel
+          : (FORCED_CHAT_MODEL_ID as ChatModel['id']);
         const result = streamText({
-          model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          model: myProvider.languageModel(effectiveModelId),
+          system: systemPrompt({
+            selectedChatModel: effectiveModelId,
+            requestHints,
+          }),
           messages: convertToModelMessages(uiMessages),
           toolChoice: 'auto',
           providerOptions: {
@@ -166,9 +176,9 @@ export async function POST(request: Request) {
           },
           stopWhen: stepCountIs(5),
           experimental_activeTools:
-            selectedChatModel === 'chat-model-reasoning' ||
-            selectedChatModel === 'deepseek-r1' ||
-            selectedChatModel === 'openai-gpt-oss-120b'
+            effectiveModelId === 'chat-model-reasoning' ||
+            effectiveModelId === 'deepseek-r1' ||
+            effectiveModelId === 'openai-gpt-oss-120b'
               ? []
               : [
                   'getWeather',

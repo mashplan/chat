@@ -13,3 +13,7 @@ export const isDebugEnabled =
 export const guestRegex = /^guest-\d+$/;
 
 export const DUMMY_PASSWORD = generateDummyPassword();
+
+// Feature flags
+export const isMultiModelChooseEnabled =
+  process.env.FEATURE_MULTI_MODEL_CHOOSE === 'true';

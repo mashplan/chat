@@ -31,6 +31,7 @@ export function Chat({
   isReadonly,
   session,
   autoResume,
+  isMultiModelChooseEnabled = true,
 }: {
   id: string;
   initialMessages: ChatMessage[];
@@ -39,6 +40,7 @@ export function Chat({
   isReadonly: boolean;
   session: Session;
   autoResume: boolean;
+  isMultiModelChooseEnabled?: boolean;
 }) {
   const { visibilityType } = useChatVisibility({
     chatId: id,
@@ -71,7 +73,9 @@ export function Chat({
           body: {
             id,
             message: messages.at(-1),
-            selectedChatModel: initialChatModel,
+            selectedChatModel: isMultiModelChooseEnabled
+              ? initialChatModel
+              : initialChatModel,
             selectedVisibilityType: visibilityType,
             ...body,
           },
@@ -170,6 +174,7 @@ export function Chat({
               sendMessage={sendMessage}
               selectedVisibilityType={visibilityType}
               selectedModelId={initialChatModel}
+              isMultiModelChooseEnabled={isMultiModelChooseEnabled}
             />
           )}
         </div>
@@ -191,6 +196,7 @@ export function Chat({
         isReadonly={isReadonly}
         selectedVisibilityType={visibilityType}
         selectedModelId={initialChatModel}
+        isMultiModelChooseEnabled={isMultiModelChooseEnabled}
       />
     </>
   );
