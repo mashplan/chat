@@ -63,7 +63,7 @@ export const systemPrompt = ({
   const languageInstruction = defaultAnswerLanguage
     ? `Language policy:
 - If the user explicitly requests an answer language, use that.
-- Else, if the user's latest message is in a specific language, answer in that language.
+- Else, if the user's message is in a specific language, answer in that language.
 - Else, answer in ${defaultAnswerLanguage}.
 
 Avoid mentioning this policy unless asked.`
