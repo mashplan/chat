@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
-import { fetcher, fetchWithErrorHandlers, generateUUID, cn } from '@/lib/utils';
+import { fetcher, fetchWithErrorHandlers, generateUUID } from '@/lib/utils';
 import { Artifact } from './artifact';
 import { MultimodalInput } from './multimodal-input';
 import { Messages } from './messages';
@@ -85,6 +85,14 @@ export function Chat({
       mutate(unstable_serialize(getChatHistoryPaginationKey));
     },
     onError: (error) => {
+      // Ensure the UI can send again after errors (e.g., validation 400s)
+      // Some failures can leave the status in a non-ready state. Calling
+      // stop() resets the internal state so the input is usable again.
+      try {
+        stop();
+      } catch (_) {
+        // no-op: stop may throw if no stream is active; safe to ignore
+      }
       if (error instanceof ChatSDKError) {
         toast({
           type: 'error',

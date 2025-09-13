@@ -39,6 +39,16 @@ import type { Attachment, ChatMessage } from '@/lib/types';
 import { chatModels } from '@/lib/ai/models';
 import { saveChatModelAsCookie } from '@/app/(chat)/actions';
 import { startTransition } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog';
 
 function PureMultimodalInput({
   chatId,
@@ -117,6 +127,8 @@ function PureMultimodalInput({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
+  const [confirmForceSendOpen, setConfirmForceSendOpen] = useState(false);
+  const confirmForceSendRef = useRef<() => void>(() => {});
 
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
@@ -268,7 +280,11 @@ function PureMultimodalInput({
         onSubmit={(event) => {
           event.preventDefault();
           if (status !== 'ready') {
-            toast.error('Please wait for the model to finish its response!');
+            confirmForceSendRef.current = () => {
+              stop();
+              submitForm();
+            };
+            setConfirmForceSendOpen(true);
             return;
           }
           submitForm();
@@ -339,6 +355,33 @@ function PureMultimodalInput({
           )}
         </PromptInputToolbar>
       </PromptInput>
+
+      <AlertDialog
+        open={confirmForceSendOpen}
+        onOpenChange={setConfirmForceSendOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Stop current response?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The model is still responding. Do you want to stop it and send
+              your new prompt now?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const fn = confirmForceSendRef.current;
+                setConfirmForceSendOpen(false);
+                fn();
+              }}
+            >
+              Stop and send
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
