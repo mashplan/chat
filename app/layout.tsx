@@ -7,9 +7,29 @@ import './globals.css';
 import { SessionProvider } from 'next-auth/react';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://chat.vercel.ai'),
-  title: 'Next.js Chatbot Template',
-  description: 'Next.js chatbot template using the AI SDK.',
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  ),
+  title: {
+    default: 'Valvet AI',
+    template: '%s | Valvet AI',
+  },
+  description: 'Valvet AI - äkta svensk AI',
+  openGraph: {
+    title: 'Valvet AI',
+    description: 'Valvet AI - äkta svensk AI',
+    url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    siteName: 'Valvet AI',
+    images: ['/opengraph-image.png'],
+    locale: 'sv_SE',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Valvet AI',
+    description: 'Valvet AI - äkta svensk AI',
+    images: ['/twitter-image.png'],
+  },
 };
 
 export const viewport = {
