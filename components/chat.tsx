@@ -22,6 +22,16 @@ import { useAutoResume } from '@/hooks/use-auto-resume';
 import { ChatSDKError } from '@/lib/errors';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export function Chat({
   id,
@@ -56,6 +66,7 @@ export function Chat({
   const [usage, setUsage] = useState<LanguageModelUsage | undefined>(
     initialLastContext,
   );
+  const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
 
   const {
     messages,
@@ -106,10 +117,17 @@ export function Chat({
         // no-op: stop may throw if no stream is active; safe to ignore
       }
       if (error instanceof ChatSDKError) {
-        toast({
-          type: 'error',
-          description: error.message,
-        });
+        // Check if it's a credit card error
+        if (
+          error.message?.includes('AI Gateway requires a valid credit card')
+        ) {
+          setShowCreditCardAlert(true);
+        } else {
+          toast({
+            type: 'error',
+            description: error.message,
+          });
+        }
       }
     },
   });
@@ -208,6 +226,36 @@ export function Chat({
         selectedModelId={initialChatModel}
         isMultiModelChooseEnabled={isMultiModelChooseEnabled}
       />
+
+      <AlertDialog
+        open={showCreditCardAlert}
+        onOpenChange={setShowCreditCardAlert}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Activate AI Gateway</AlertDialogTitle>
+            <AlertDialogDescription>
+              This application requires{' '}
+              {process.env.NODE_ENV === 'production' ? 'the owner' : 'you'} to
+              activate Vercel AI Gateway.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                window.open(
+                  'https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%3Fmodal%3Dadd-credit-card',
+                  '_blank',
+                );
+                window.location.href = '/';
+              }}
+            >
+              Activate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
