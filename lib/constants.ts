@@ -17,3 +17,9 @@ export const DUMMY_PASSWORD = generateDummyPassword();
 // Feature flags
 export const isMultiModelChooseEnabled =
   process.env.FEATURE_MULTI_MODEL_CHOOSE === 'true';
+
+// Default answer language (if provided). Example: 'swedish', 'english'.
+// If unset or empty, no default language instruction is applied.
+export const defaultAnswerLanguage = (
+  process.env.FEATURE_DEFAULT_ANSWER_LANGUAGE || ''
+).trim();
