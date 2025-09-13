@@ -29,7 +29,7 @@ import {
   PromptInputModelSelectTrigger,
   PromptInputModelSelectContent,
 } from './elements/prompt-input';
-import { SelectItem, SelectValue } from '@/components/ui/select';
+import { SelectItem } from '@/components/ui/select';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -43,6 +43,16 @@ import { startTransition } from 'react';
 import { getContextWindow, normalizeUsage } from 'tokenlens';
 import { Context } from './elements/context';
 import { myProvider } from '@/lib/ai/providers';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog';
 
 function PureMultimodalInput({
   chatId,
@@ -58,6 +68,7 @@ function PureMultimodalInput({
   className,
   selectedVisibilityType,
   selectedModelId,
+  isMultiModelChooseEnabled,
   usage,
 }: {
   chatId: string;
@@ -73,6 +84,7 @@ function PureMultimodalInput({
   className?: string;
   selectedVisibilityType: VisibilityType;
   selectedModelId: string;
+  isMultiModelChooseEnabled: boolean;
   usage?: LanguageModelUsage;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -123,6 +135,9 @@ function PureMultimodalInput({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
+
+  const [confirmForceSendOpen, setConfirmForceSendOpen] = useState(false);
+  const confirmForceSendRef = useRef<() => void>(() => {});
 
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
@@ -304,7 +319,11 @@ function PureMultimodalInput({
         onSubmit={(event) => {
           event.preventDefault();
           if (status !== 'ready') {
-            toast.error('Please wait for the model to finish its response!');
+            confirmForceSendRef.current = () => {
+              stop();
+              submitForm();
+            };
+            setConfirmForceSendOpen(true);
           } else {
             submitForm();
           }
@@ -353,7 +372,7 @@ function PureMultimodalInput({
           minHeight={44}
           maxHeight={200}
           disableAutoResize={true}
-          className="text-sm resize-none py-3 px-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] bg-transparent !border-0 !border-none outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none placeholder:text-muted-foreground"
+          className="text-sm resize-none p-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] bg-transparent !border-0 !border-none outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none placeholder:text-muted-foreground"
           rows={1}
           autoFocus
         />
@@ -380,6 +399,33 @@ function PureMultimodalInput({
           )}
         </PromptInputToolbar>
       </PromptInput>
+
+      <AlertDialog
+        open={confirmForceSendOpen}
+        onOpenChange={setConfirmForceSendOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Stop current response?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The model is still responding. Do you want to stop it and send
+              your new prompt now?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const fn = confirmForceSendRef.current;
+                setConfirmForceSendOpen(false);
+                fn();
+              }}
+            >
+              Stop and send
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
