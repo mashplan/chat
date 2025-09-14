@@ -8,12 +8,6 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModelV2Middleware } from '@ai-sdk/provider';
 // import { gateway } from '@ai-sdk/gateway';
-import {
-  artifactModel,
-  chatModel,
-  reasoningModel,
-  titleModel,
-} from './models.test';
 import { isDebugEnabled, isTestEnvironment } from '../constants';
 
 // Create OpenAI instance with explicit configuration
@@ -37,14 +31,22 @@ const bergetAiProvider = createOpenAICompatible({
 });
 
 export const myProvider = isTestEnvironment
-  ? customProvider({
-      languageModels: {
-        'chat-model': chatModel,
-        'chat-model-reasoning': reasoningModel,
-        'title-model': titleModel,
-        'artifact-model': artifactModel,
-      },
-    })
+  ? (() => {
+      const {
+        artifactModel,
+        chatModel,
+        reasoningModel,
+        titleModel,
+      } = require('./models.mock');
+      return customProvider({
+        languageModels: {
+          'chat-model': chatModel,
+          'chat-model-reasoning': reasoningModel,
+          'title-model': titleModel,
+          'artifact-model': artifactModel,
+        },
+      });
+    })()
   : customProvider({
       languageModels: {
         'chat-model': anthropic('claude-sonnet-4-20250514'),

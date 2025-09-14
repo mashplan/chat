@@ -2,6 +2,7 @@ import type { Attachment } from '@/lib/types';
 import { Loader } from './elements/loader';
 import { CrossSmallIcon } from './icons';
 import { Button } from './ui/button';
+import Image from 'next/image';
 
 export const PreviewAttachment = ({
   attachment,
@@ -19,16 +20,18 @@ export const PreviewAttachment = ({
   return (
     <div
       data-testid="input-attachment-preview"
-      className="group relative w-16 h-16 rounded-lg overflow-hidden bg-muted border"
+      className="group relative size-16 overflow-hidden rounded-lg border bg-muted"
     >
       {contentType?.startsWith('image') ? (
-        <img
+        <Image
           src={url}
           alt={name ?? 'An image attachment'}
-          className="w-full h-full object-cover"
+          className="size-full object-cover"
+          width={64}
+          height={64}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+        <div className="flex size-full items-center justify-center text-muted-foreground text-xs">
           File
         </div>
       )}
@@ -44,13 +47,13 @@ export const PreviewAttachment = ({
           onClick={onRemove}
           size="sm"
           variant="destructive"
-          className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity size-4 p-0 rounded-full"
+          className="absolute top-0.5 right-0.5 size-4 rounded-full p-0 opacity-0 transition-opacity group-hover:opacity-100"
         >
           <CrossSmallIcon size={8} />
         </Button>
       )}
 
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent text-white text-[10px] px-1 py-0.5 truncate">
+      <div className="absolute inset-x-0 bottom-0 truncate bg-linear-to-t from-black/80 to-transparent px-1 py-0.5 text-[10px] text-white">
         {name}
       </div>
     </div>
