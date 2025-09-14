@@ -111,9 +111,9 @@ const PurePreviewMessage = ({
           {message.role === 'assistant' &&
             isLoading &&
             (message.parts?.length ?? 0) === 0 && (
-              <MessageContent className="bg-transparent -ml-4">
-                <div className="text-muted-foreground flex items-center gap-2">
-                  <span className="animate-spin inline-flex">
+              <MessageContent className="-ml-4 bg-transparent">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span className="inline-flex animate-spin">
                     <LoaderIcon size={14} />
                   </span>
                   Preparing response...
