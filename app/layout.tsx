@@ -2,6 +2,8 @@ import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
+import { LocaleProvider } from '@/components/locale-provider';
+import { defaultLocale } from '@/lib/i18n/config';
 
 import './globals.css';
 import { SessionProvider } from 'next-auth/react';
@@ -73,9 +75,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = defaultLocale;
+  const messages = (await import(`../messages/${locale}.json`)).default;
   return (
     <html
-      lang="en"
+      lang={locale}
       // `next-themes` injects an extra classname to the body element to avoid
       // visual flicker before hydration. Hence the `suppressHydrationWarning`
       // prop is necessary to avoid the React hydration mismatch warning.
@@ -97,8 +101,10 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Toaster position="top-center" />
-          <SessionProvider>{children}</SessionProvider>
+          <LocaleProvider locale={locale} messages={messages}>
+            <Toaster position="top-center" />
+            <SessionProvider>{children}</SessionProvider>
+          </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>

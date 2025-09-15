@@ -1,0 +1,15 @@
+{
+  "App": {
+    "title": "Valvet AI",
+    "description": "Valvet AI - äkta svensk AI"
+  },
+  "UserProfile": {
+    "title": "Hej {firstName}!",
+    "membership": "Medlem sedan {memberSince}",
+    "followers": "{count} följare"
+  },
+  "Greeting": {
+    "hello": "Hej där!",
+    "howCanIHelpYou": "Hur kan jag hjälpa dig idag?"
+  }
+}

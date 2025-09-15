@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { guestRegex, isDevelopmentEnvironment } from './lib/constants';
+import { LOCALE_COOKIE } from './lib/i18n';
+import { defaultLocale, locales } from './lib/i18n/config';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -20,6 +22,22 @@ export async function middleware(request: NextRequest) {
 
   if (pathname.startsWith('/api/auth')) {
     return NextResponse.next();
+  }
+
+  // Ensure locale cookie exists for UI translations
+  const response = NextResponse.next();
+  const localeCookie = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (!localeCookie) {
+    const acceptLanguage = request.headers.get('accept-language') || '';
+    const preferred = acceptLanguage
+      .split(',')
+      .map((part) => part.split(';')[0].trim())
+      .find((lang) => locales.includes(lang.split('-')[0]));
+    const locale = preferred ? preferred.split('-')[0] : defaultLocale;
+    response.cookies.set(LOCALE_COOKIE, locale, {
+      path: '/',
+      sameSite: 'lax',
+    });
   }
 
   const token = await getToken({
@@ -49,7 +67,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', baseUrl));
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
