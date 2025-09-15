@@ -1,4 +1,20 @@
 {
+  "Common": {
+    "close": "Stäng",
+    "cancel": "Avbryt",
+    "continue": "Fortsätt",
+    "delete": "Ta bort",
+    "share": "Dela",
+    "more": "Mer",
+    "private": "Privat",
+    "public": "Publik",
+    "previousSlide": "Föregående bild",
+    "nextSlide": "Nästa bild",
+    "navigationMenu": "Navigationsmeny",
+    "toggleSidebar": "Växla sidofält",
+    "assistant": "Assistent",
+    "apply": "Använd"
+  },
   "App": {
     "title": "Valvet AI",
     "description": "Valvet AI - äkta svensk AI"
@@ -9,7 +25,76 @@
     "followers": "{count} följare"
   },
   "Greeting": {
-    "hello": "Hej där!",
-    "howCanIHelpYou": "Hur kan jag hjälpa dig idag?"
+    "title": "Hej där!",
+    "subtitle": "Hur kan jag hjälpa dig idag?"
+  },
+  "History": {
+    "loginPrompt": "Logga in för att spara och återbesöka tidigare chattar!",
+    "today": "Idag",
+    "yesterday": "Igår",
+    "last7Days": "Senaste 7 dagarna",
+    "last30Days": "Senaste 30 dagarna",
+    "olderThanLastMonth": "Äldre än förra månaden",
+    "empty": "Dina konversationer visas här när du börjar chatta!",
+    "reachedEnd": "Du har nått slutet av din chatt-historik.",
+    "loadingChats": "Laddar chattar...",
+    "confirmDeleteTitle": "Är du helt säker?",
+    "confirmDeleteDescription": "Detta kan inte ångras. Din chatt raderas permanent från våra servrar.",
+    "deletingChat": "Tar bort chatt...",
+    "deleteSuccess": "Chatt borttagen",
+    "deleteError": "Misslyckades att ta bort chatt"
+  },
+  "MultimodalInput": {
+    "placeholder": "Skriv ett meddelande...",
+    "stopCurrentResponseTitle": "Stoppa pågående svar?",
+    "stopCurrentResponseDescription": "Modellen svarar fortfarande. Vill du stoppa och skicka din nya prompt nu?",
+    "stopAndSend": "Stoppa och skicka"
+  },
+  "Elements": {
+    "WebPreview": {
+      "noConsoleOutput": "Ingen konsolutdata",
+      "enterUrlPlaceholder": "Ange URL..."
+    },
+    "Source": {
+      "usedSources": "Använde {count} källor"
+    },
+    "Reasoning": {
+      "thinking": "Tänker...",
+      "thoughtForSeconds": "Tänkte i {duration}s"
+    },
+    "Context": {
+      "totalCost": "Total kostnad"
+    }
+  },
+  "Console": {
+    "title": "Konsol"
+  },
+  "Chat": {
+    "activateGatewayTitle": "Aktivera AI Gateway",
+    "Visibility": {
+      "privateTitle": "Privat",
+      "privateDescription": "Endast du kan se denna chatt",
+      "publicTitle": "Publik",
+      "publicDescription": "Alla med länken kan se denna chatt"
+    }
+  },
+  "SuggestedActions": {
+    "suggestionOne": "Vad är fördelarna med att använda Next.js?",
+    "suggestionTwo": "Skriv kod för att demonstrera Dijkstras algoritm",
+    "suggestionThree": "Hjälp mig skriva en essä om Silicon Valley",
+    "suggestionFour": "Vad är vädret i San Francisco?"
+  },
+  "ChatHeader": {
+    "newChat": "Ny chatt"
+  },
+  "VersionFooter": {
+    "viewingPreviousVersion": "Du visar en tidigare version",
+    "restoreThisVersion": "Återställ denna version"
+  },
+  "ImageEditor": {
+    "generatingImage": "Genererar bild..."
+  },
+  "Message": {
+    "thinking": "Tänker..."
   }
 }

@@ -15,7 +15,7 @@ export const Greeting = () => {
         transition={{ delay: 0.5 }}
         className="font-semibold text-xl md:text-2xl"
       >
-        {t('hello')}
+        {t('title')}
       </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -24,7 +24,7 @@ export const Greeting = () => {
         transition={{ delay: 0.6 }}
         className="text-xl text-zinc-500 md:text-2xl"
       >
-        {t('howCanIHelpYou')}
+        {t('subtitle')}
       </motion.div>
     </div>
   );
