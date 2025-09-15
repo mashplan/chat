@@ -3,6 +3,7 @@
   "version": "3.1.0",
   "private": true,
   "scripts": {
+    "bootstrap": "pnpm install && pnpm run db:generate && pnpm run db:migrate && pnpm run dev",
     "dev": "next dev --turbo --port 3333",
     "build": "tsx lib/db/migrate && next build",
     "build:docker": "next build",
