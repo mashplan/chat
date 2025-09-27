@@ -13,7 +13,9 @@
     "navigationMenu": "Navigationsmeny",
     "toggleSidebar": "Växla sidofält",
     "assistant": "Assistent",
-    "apply": "Använd"
+    "apply": "Använd",
+    "thinking": "Tänker...",
+    "thoughtForSeconds": "Tänkte i {duration} sekunder"
   },
   "App": {
     "title": "Valvet AI",

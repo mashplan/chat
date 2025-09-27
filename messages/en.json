@@ -13,7 +13,9 @@
     "navigationMenu": "Navigation Menu",
     "toggleSidebar": "Toggle Sidebar",
     "assistant": "Assistant",
-    "apply": "Apply"
+    "apply": "Apply",
+    "thinking": "Thinking...",
+    "thoughtForSeconds": "Thought for {duration}s"
   },
   "App": {
     "title": "Valvet AI",
