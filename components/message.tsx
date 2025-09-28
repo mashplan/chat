@@ -293,6 +293,24 @@ const PurePreviewMessage = ({
                     {state === 'input-available' && (
                       <ToolInput input={(part as any).input} />
                     )}
+                    {state === 'output-error' && (
+                      <ToolOutput
+                        output={
+                          <div className="space-y-2">
+                            <div className="text-muted-foreground text-xs">
+                              Raw error
+                            </div>
+                            <div className="rounded-md bg-muted/50 p-2 text-xs">
+                              <CodeBlock
+                                code={String((part as any).errorText || '')}
+                                language="text"
+                              />
+                            </div>
+                          </div>
+                        }
+                        errorText={(part as any).errorText}
+                      />
+                    )}
                     {state === 'output-available' && (
                       <ToolOutput
                         output={

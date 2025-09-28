@@ -69,16 +69,24 @@ export const systemPrompt = ({
 Avoid mentioning this policy unless asked.`
     : '';
 
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const dateInstruction = `Today's date is ${today}.`;
+
   if (
     selectedChatModel === 'chat-model-reasoning' ||
     selectedChatModel === 'deepseek-r1' ||
     selectedChatModel === 'openai-gpt-oss-120b'
   ) {
-    return `${regularPrompt}\n\n${requestPrompt}${
+    return `${regularPrompt}\n\n${requestPrompt}\n\n${dateInstruction}${
       languageInstruction ? `\n\n${languageInstruction}` : ''
     }`;
   } else {
-    return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}${
+    return `${regularPrompt}\n\n${requestPrompt}\n\n${dateInstruction}\n\n${artifactsPrompt}${
       languageInstruction ? `\n\n${languageInstruction}` : ''
     }`;
   }
