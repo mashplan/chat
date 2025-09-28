@@ -24,6 +24,7 @@ import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { CodeBlock } from './elements/code-block';
 
 const PurePreviewMessage = ({
   chatId,
@@ -370,6 +371,24 @@ const PurePreviewMessage = ({
                     {state === 'input-available' && (
                       <ToolInput input={(part as any).input} />
                     )}
+                    {state === 'output-error' && (
+                      <ToolOutput
+                        output={
+                          <div className="space-y-2">
+                            <div className="text-muted-foreground text-xs">
+                              Raw error
+                            </div>
+                            <div className="rounded-md bg-muted/50 p-2 text-xs">
+                              <CodeBlock
+                                code={String((part as any).errorText || '')}
+                                language="text"
+                              />
+                            </div>
+                          </div>
+                        }
+                        errorText={(part as any).errorText}
+                      />
+                    )}
                     {state === 'output-available' && (
                       <ToolOutput
                         output={
@@ -424,6 +443,21 @@ const PurePreviewMessage = ({
                                 </div>
                               </div>
                             )}
+                            <details className="rounded-md border p-2 text-xs">
+                              <summary className="cursor-pointer select-none font-medium">
+                                Raw JSON
+                              </summary>
+                              <div className="mt-2">
+                                <CodeBlock
+                                  code={JSON.stringify(
+                                    (part as any).output,
+                                    null,
+                                    2,
+                                  )}
+                                  language="json"
+                                />
+                              </div>
+                            </details>
                           </div>
                         }
                         errorText={(part as any).errorText}
