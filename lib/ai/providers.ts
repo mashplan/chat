@@ -30,6 +30,16 @@ const bergetAiProvider = createOpenAICompatible({
   includeUsage: true,
 });
 
+// Scaleway provider configuration
+const scalewayBaseURL =
+  process.env.SCALEWAY_AI_BASE_URL || 'https://api.scaleway.ai/v1';
+const scalewayProvider = createOpenAICompatible({
+  name: 'scaleway',
+  apiKey: process.env.SCALEWAY_AI_API_KEY || 'dummy-key-for-tests',
+  baseURL: scalewayBaseURL,
+  includeUsage: true,
+});
+
 export const myProvider = isTestEnvironment
   ? (() => {
       const {
@@ -89,6 +99,15 @@ export const myProvider = isTestEnvironment
             middleware: extractReasoningMiddleware({ tagName: 'think' }),
           }),
           'berget-ai:Qwen/Qwen3-32B',
+        ),
+        // Scaleway models
+        'scaleway-gpt-oss-120b': withDebug(
+          scalewayProvider('gpt-oss-120b'),
+          'scaleway:gpt-oss-120b',
+        ),
+        'scaleway-qwen3-235b': withDebug(
+          scalewayProvider('qwen3-235b-a22b-instruct-2507'),
+          'scaleway:qwen3-235b-a22b-instruct-2507',
         ),
       },
       imageModels: {

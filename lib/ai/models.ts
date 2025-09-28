@@ -36,6 +36,18 @@ export const chatModels: Array<ChatModel> = [
       'OpenAI GPT-OSS 120B model via Berget AI - powerful open-source model with strong reasoning capabilities',
   },
   {
+    id: 'scaleway-gpt-oss-120b',
+    name: 'GPT-OSS 120B (via Scaleway)',
+    description:
+      'Open-source GPT-OSS 120B served via Scaleway Generative APIs - OpenAI-compatible',
+  },
+  {
+    id: 'scaleway-qwen3-235b',
+    name: 'Qwen3 235B (via Scaleway)',
+    description:
+      'Qwen3 235B model via Scaleway Generative APIs - OpenAI-compatible',
+  },
+  {
     id: 'llama-chat',
     name: 'Llama 3.3 70B (via Berget AI)',
     description:

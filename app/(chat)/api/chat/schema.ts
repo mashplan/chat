@@ -26,6 +26,8 @@ export const postRequestBodySchema = z.object({
     'chat-model-reasoning',
     'deepseek-r1',
     'openai-gpt-oss-120b',
+    'scaleway-gpt-oss-120b',
+    'scaleway-qwen3-235b',
     'llama-chat',
     'mistral-chat',
     'qwen3-32b',
