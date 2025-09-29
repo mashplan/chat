@@ -9,6 +9,7 @@ import {
 } from '@/lib/db/queries';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { myProvider } from '@/lib/ai/providers';
+import { getTextFromMessage } from '@/lib/utils';
 
 export async function saveChatModelAsCookie(model: string) {
   const cookieStore = await cookies();
@@ -20,17 +21,55 @@ export async function generateTitleFromUserMessage({
 }: {
   message: UIMessage;
 }) {
-  const { text: title } = await generateText({
-    model: myProvider.languageModel('title-model'),
-    system: `\n
+  const system = `\n
     - you will generate a short title based on the first message a user begins a conversation with
     - ensure it is not more than 80 characters long
     - the title should be a summary of the user's message
-    - do not use quotes or colons`,
-    prompt: JSON.stringify(message),
-  });
+    - do not use quotes or colons`;
 
-  return title;
+  async function generateWithModel(modelId: string) {
+    const { text } = await generateText({
+      model: myProvider.languageModel(modelId),
+      system,
+      prompt: JSON.stringify(message),
+    });
+    return text;
+  }
+
+  // Try primary title model → fallback to Llama → final local fallback
+  try {
+    return await generateWithModel('title-model');
+  } catch (primaryError) {
+    console.warn(
+      '[title] primary model failed, falling back to llama-chat',
+      primaryError,
+    );
+    try {
+      return await generateWithModel('llama-chat');
+    } catch (fallbackError) {
+      console.warn(
+        '[title] fallback model failed, using local title',
+        fallbackError,
+      );
+      const localTitle = buildLocalTitleFromMessage(message);
+      return localTitle;
+    }
+  }
+}
+
+function buildLocalTitleFromMessage(message: UIMessage) {
+  try {
+    const raw = getTextFromMessage(message as any) || '';
+    const sanitized = raw
+      .replace(/["'“”‘’]/g, '')
+      .replace(/[:]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const fallback = sanitized || 'New chat';
+    return fallback.length <= 80 ? fallback : `${fallback.slice(0, 77)}...`;
+  } catch {
+    return 'New chat';
+  }
 }
 
 export async function deleteTrailingMessages({ id }: { id: string }) {

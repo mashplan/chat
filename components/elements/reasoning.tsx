@@ -11,6 +11,7 @@ import { BrainIcon, ChevronDownIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { createContext, memo, useContext, useEffect, useState } from 'react';
 import { Response } from './response';
+import { useTranslations } from 'next-intl';
 
 type ReasoningContextValue = {
   isStreaming: boolean;
@@ -115,7 +116,7 @@ export type ReasoningTriggerProps = ComponentProps<typeof CollapsibleTrigger>;
 export const ReasoningTrigger = memo(
   ({ className, children, ...props }: ReasoningTriggerProps) => {
     const { isStreaming, isOpen, duration } = useReasoning();
-
+    const t = useTranslations('Common');
     return (
       <CollapsibleTrigger
         className={cn(
@@ -128,9 +129,9 @@ export const ReasoningTrigger = memo(
           <>
             <BrainIcon className="size-4" />
             {isStreaming || duration === 0 ? (
-              <p>Thinking...</p>
+              <p>{t('thinking')}</p>
             ) : (
-              <p>Thought for {duration}s</p>
+              <p>{t('thoughtForSeconds', { duration })}</p>
             )}
             <ChevronDownIcon
               className={cn(

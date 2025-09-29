@@ -24,6 +24,7 @@ import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { CodeBlock } from './elements/code-block';
 
 const PurePreviewMessage = ({
   chatId,
@@ -275,6 +276,209 @@ const PurePreviewMessage = ({
                           )
                         }
                         errorText={undefined}
+                      />
+                    )}
+                  </ToolContent>
+                </Tool>
+              );
+            }
+
+            if ((part as any).type === 'tool-searchWeb') {
+              const { toolCallId, state } = part as any;
+
+              return (
+                <Tool key={toolCallId} defaultOpen={true}>
+                  <ToolHeader state={state} type="tool-searchWeb" />
+                  <ToolContent>
+                    {state === 'input-available' && (
+                      <ToolInput input={(part as any).input} />
+                    )}
+                    {state === 'output-error' && (
+                      <ToolOutput
+                        output={
+                          <div className="space-y-2">
+                            <div className="text-muted-foreground text-xs">
+                              Raw error
+                            </div>
+                            <div className="rounded-md bg-muted/50 p-2 text-xs">
+                              <CodeBlock
+                                code={String((part as any).errorText || '')}
+                                language="text"
+                              />
+                            </div>
+                          </div>
+                        }
+                        errorText={(part as any).errorText}
+                      />
+                    )}
+                    {state === 'output-available' && (
+                      <ToolOutput
+                        output={
+                          <div className="space-y-3">
+                            {(part as any).output?.summary && (
+                              <div className="rounded-md bg-muted/50 p-2 text-xs">
+                                <div className="font-medium">Summary</div>
+                                <div>{(part as any).output.summary}</div>
+                              </div>
+                            )}
+                            <div className="text-muted-foreground text-xs">
+                              Query:{' '}
+                              <span className="font-medium">
+                                {(part as any).output?.query ??
+                                  (part as any).input?.query}
+                              </span>
+                              {typeof (part as any).output?.resultCount ===
+                                'number' && (
+                                <span>
+                                  {' '}
+                                  • Results: {(part as any).output.resultCount}
+                                </span>
+                              )}
+                            </div>
+                            {Array.isArray((part as any).output?.results) &&
+                              (part as any).output.results.length > 0 && (
+                                <div className="space-y-2">
+                                  {(part as any).output.results.map(
+                                    (r: any, i: number) => (
+                                      <div
+                                        key={r.url ?? i}
+                                        className="rounded-md border bg-background p-2"
+                                      >
+                                        <div className="truncate font-medium text-xs">
+                                          <a
+                                            href={r.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="underline"
+                                          >
+                                            {r.title || r.url}
+                                          </a>
+                                        </div>
+                                        {r.description && (
+                                          <div className="mt-1 line-clamp-3 text-muted-foreground text-xs">
+                                            {r.description}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ),
+                                  )}
+                                </div>
+                              )}
+                            {(part as any).output?.privacy_notice && (
+                              <div className="text-[10px] text-muted-foreground">
+                                {(part as any).output.privacy_notice}
+                              </div>
+                            )}
+                          </div>
+                        }
+                        errorText={(part as any).errorText}
+                      />
+                    )}
+                  </ToolContent>
+                </Tool>
+              );
+            }
+
+            if ((part as any).type === 'tool-scrapeUrl') {
+              const { toolCallId, state } = part as any;
+
+              return (
+                <Tool key={toolCallId} defaultOpen={true}>
+                  <ToolHeader state={state} type="tool-scrapeUrl" />
+                  <ToolContent>
+                    {state === 'input-available' && (
+                      <ToolInput input={(part as any).input} />
+                    )}
+                    {state === 'output-error' && (
+                      <ToolOutput
+                        output={
+                          <div className="space-y-2">
+                            <div className="text-muted-foreground text-xs">
+                              Raw error
+                            </div>
+                            <div className="rounded-md bg-muted/50 p-2 text-xs">
+                              <CodeBlock
+                                code={String((part as any).errorText || '')}
+                                language="text"
+                              />
+                            </div>
+                          </div>
+                        }
+                        errorText={(part as any).errorText}
+                      />
+                    )}
+                    {state === 'output-available' && (
+                      <ToolOutput
+                        output={
+                          <div className="space-y-3">
+                            <div className="text-muted-foreground text-xs">
+                              Scraped:{' '}
+                              <span className="font-medium">
+                                {(part as any).output?.url ||
+                                  (part as any).input?.url}
+                              </span>
+                            </div>
+                            {(part as any).output?.data?.metadata && (
+                              <div className="rounded-md border bg-background p-2 text-xs">
+                                <div className="font-medium">Metadata</div>
+                                <div className="mt-1 grid grid-cols-1 gap-1 sm:grid-cols-2">
+                                  <div>
+                                    Title:{' '}
+                                    {(part as any).output.data.metadata.title}
+                                  </div>
+                                  <div>
+                                    Language:{' '}
+                                    {(part as any).output.data.metadata
+                                      .language || 'n/a'}
+                                  </div>
+                                  <div>
+                                    Status:{' '}
+                                    {String(
+                                      (part as any).output.data.metadata
+                                        .statusCode ?? 'n/a',
+                                    )}
+                                  </div>
+                                  <div>
+                                    Source:{' '}
+                                    {
+                                      (part as any).output.data.metadata
+                                        .sourceURL
+                                    }
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {(part as any).output?.data?.markdown && (
+                              <div className="rounded-md bg-muted/50 p-2 text-xs">
+                                <div className="font-medium">
+                                  Markdown (preview)
+                                </div>
+                                <div className="mt-1 line-clamp-6 whitespace-pre-wrap">
+                                  {(part as any).output.data.markdown.slice(
+                                    0,
+                                    2000,
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            <details className="rounded-md border p-2 text-xs">
+                              <summary className="cursor-pointer select-none font-medium">
+                                Raw JSON
+                              </summary>
+                              <div className="mt-2">
+                                <CodeBlock
+                                  code={JSON.stringify(
+                                    (part as any).output,
+                                    null,
+                                    2,
+                                  )}
+                                  language="json"
+                                />
+                              </div>
+                            </details>
+                          </div>
+                        }
+                        errorText={(part as any).errorText}
                       />
                     )}
                   </ToolContent>

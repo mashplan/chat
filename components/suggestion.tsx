@@ -7,6 +7,7 @@ import { useWindowSize } from 'usehooks-ts';
 import type { UISuggestion } from '@/lib/editor/suggestions';
 
 import { CrossIcon, MessageIcon } from './icons';
+import { useTranslations } from 'next-intl';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import type { ArtifactKind } from './artifact';
@@ -20,6 +21,7 @@ export const Suggestion = ({
   onApply: () => void;
   artifactKind: ArtifactKind;
 }) => {
+  const t = useTranslations('Common');
   const [isExpanded, setIsExpanded] = useState(false);
   const { width: windowWidth } = useWindowSize();
 
@@ -51,7 +53,7 @@ export const Suggestion = ({
           <div className="flex flex-row items-center justify-between">
             <div className="flex flex-row items-center gap-2">
               <div className="size-4 rounded-full bg-muted-foreground/25" />
-              <div className="font-medium">Assistant</div>
+              <div className="font-medium">{t('assistant')}</div>
             </div>
             <button
               type="button"
@@ -69,7 +71,7 @@ export const Suggestion = ({
             className="w-fit rounded-full px-3 py-1.5"
             onClick={onApply}
           >
-            Apply
+            {t('apply')}
           </Button>
         </motion.div>
       )}

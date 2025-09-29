@@ -181,8 +181,7 @@ export async function POST(request: Request) {
           stopWhen: stepCountIs(5),
           experimental_activeTools:
             effectiveModelId === 'chat-model-reasoning' ||
-            effectiveModelId === 'deepseek-r1' ||
-            effectiveModelId === 'openai-gpt-oss-120b'
+            effectiveModelId === 'deepseek-r1'
               ? []
               : [
                   'getWeather',

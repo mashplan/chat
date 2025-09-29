@@ -49,6 +49,7 @@ import { startTransition } from 'react';
 import { getContextWindow, normalizeUsage } from 'tokenlens';
 import { Context } from './elements/context';
 import { myProvider } from '@/lib/ai/providers';
+import { useTranslations } from 'next-intl';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -93,6 +94,8 @@ function PureMultimodalInput({
   isMultiModelChooseEnabled: boolean;
   usage?: LanguageModelUsage;
 }) {
+  const t = useTranslations('MultimodalInput');
+  const tCommon = useTranslations('Common');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
 
@@ -371,7 +374,7 @@ function PureMultimodalInput({
           <PromptInputTextarea
             data-testid="multimodal-input"
             ref={textareaRef}
-            placeholder="Send a message..."
+            placeholder={t('placeholder')}
             value={input}
             onChange={handleInput}
             minHeight={44}
@@ -415,14 +418,13 @@ function PureMultimodalInput({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Stop current response?</AlertDialogTitle>
+            <AlertDialogTitle>{t('stopCurrentResponseTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              The model is still responding. Do you want to stop it and send
-              your new prompt now?
+              {t('stopCurrentResponseDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 const fn = confirmForceSendRef.current;
@@ -430,7 +432,7 @@ function PureMultimodalInput({
                 fn();
               }}
             >
-              Stop and send
+              {t('stopAndSend')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

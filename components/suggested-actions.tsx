@@ -6,6 +6,7 @@ import type { UseChatHelpers } from '@ai-sdk/react';
 import type { VisibilityType } from './visibility-selector';
 import type { ChatMessage } from '@/lib/types';
 import { Suggestion } from './elements/suggestion';
+import { useTranslations } from 'next-intl';
 
 interface SuggestedActionsProps {
   chatId: string;
@@ -18,11 +19,12 @@ function PureSuggestedActions({
   sendMessage,
   selectedVisibilityType,
 }: SuggestedActionsProps) {
+  const t = useTranslations('SuggestedActions');
   const suggestedActions = [
-    'What are the advantages of using Next.js?',
-    "Write code to demonstrate Dijkstra's algorithm",
-    'Help me write an essay about Silicon Valley',
-    'What is the weather in San Francisco?',
+    t('suggestionOne'),
+    t('suggestionTwo'),
+    t('suggestionThree'),
+    t('suggestionFour'),
   ];
 
   return (

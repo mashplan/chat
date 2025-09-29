@@ -1,0 +1,102 @@
+{
+  "Common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "delete": "Delete",
+    "share": "Share",
+    "more": "More",
+    "private": "Private",
+    "public": "Public",
+    "previousSlide": "Previous slide",
+    "nextSlide": "Next slide",
+    "navigationMenu": "Navigation Menu",
+    "toggleSidebar": "Toggle Sidebar",
+    "assistant": "Assistant",
+    "apply": "Apply",
+    "thinking": "Thinking...",
+    "thoughtForSeconds": "Thought for {duration}s"
+  },
+  "App": {
+    "title": "Valvet AI",
+    "description": "Valvet AI - true Swedish AI"
+  },
+  "UserProfile": {
+    "title": "Hello {firstName}!",
+    "membership": "Member since {memberSince}",
+    "followers": "{count} followers"
+  },
+  "Greeting": {
+    "title": "Hello there!",
+    "subtitle": "How can I help you today?"
+  },
+  "History": {
+    "loginPrompt": "Login to save and revisit previous chats!",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "last7Days": "Last 7 days",
+    "last30Days": "Last 30 days",
+    "olderThanLastMonth": "Older than last month",
+    "empty": "Your conversations will appear here once you start chatting!",
+    "reachedEnd": "You have reached the end of your chat history.",
+    "loadingChats": "Loading Chats...",
+    "confirmDeleteTitle": "Are you absolutely sure?",
+    "confirmDeleteDescription": "This action cannot be undone. This will permanently delete your chat and remove it from our servers.",
+    "deletingChat": "Deleting chat...",
+    "deleteSuccess": "Chat deleted successfully",
+    "deleteError": "Failed to delete chat"
+  },
+  "MultimodalInput": {
+    "placeholder": "Send a message...",
+    "stopCurrentResponseTitle": "Stop current response?",
+    "stopCurrentResponseDescription": "The model is still responding. Do you want to stop it and send your new prompt now?",
+    "stopAndSend": "Stop and send"
+  },
+  "Elements": {
+    "WebPreview": {
+      "noConsoleOutput": "No console output",
+      "enterUrlPlaceholder": "Enter URL..."
+    },
+    "Source": {
+      "usedSources": "Used {count} sources"
+    },
+    "Reasoning": {
+      "thinking": "Thinking...",
+      "thoughtForSeconds": "Thought for {duration}s"
+    },
+    "Context": {
+      "totalCost": "Total cost"
+    }
+  },
+  "Console": {
+    "title": "Console"
+  },
+  "Chat": {
+    "activateGatewayTitle": "Activate AI Gateway",
+    "Visibility": {
+      "privateTitle": "Private",
+      "privateDescription": "Only you can access this chat",
+      "publicTitle": "Public",
+      "publicDescription": "Anyone with the link can access this chat"
+    }
+  },
+  "SuggestedActions": {
+    "suggestionOne": "What are the advantages of using Next.js?",
+    "suggestionTwo": "Write code to demonstrate Dijkstra's algorithm",
+    "suggestionThree": "Help me write an essay about Silicon Valley",
+    "suggestionFour": "What is the weather in San Francisco?"
+  },
+  "ChatHeader": {
+    "newChat": "New Chat"
+  },
+  "VersionFooter": {
+    "viewingPreviousVersion": "You are viewing a previous version",
+    "restoreThisVersion": "Restore this version"
+  },
+  "ImageEditor": {
+    "generatingImage": "Generating Image..."
+  },
+  "Message": {
+    "thinking": "Thinking..."
+  }
+}
