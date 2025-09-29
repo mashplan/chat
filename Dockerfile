@@ -9,7 +9,9 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json pnpm-lock.yaml* ./
-RUN corepack enable pnpm && pnpm i --frozen-lockfile
+RUN corepack enable \
+  && corepack prepare pnpm@9.12.3 --activate \
+  && pnpm i --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -28,7 +30,9 @@ ENV BERGET_AI_API_KEY=placeholder
 ENV NEXT_PUBLIC_APP_URL=http://localhost:8080
 
 # Build the application (skip migrations during build)
-RUN corepack enable pnpm && pnpm run build:docker
+RUN corepack enable \
+  && corepack prepare pnpm@9.12.3 --activate \
+  && pnpm run build:docker
 
 # Production image, copy all the files and run next
 FROM base AS runner
