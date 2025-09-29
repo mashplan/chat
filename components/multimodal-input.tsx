@@ -75,7 +75,7 @@ function PureMultimodalInput({
   className,
   selectedVisibilityType,
   selectedModelId,
-  isMultiModelChooseEnabled,
+  isMultiModelChooseEnabled = false,
   usage,
 }: {
   chatId: string;
@@ -91,7 +91,7 @@ function PureMultimodalInput({
   className?: string;
   selectedVisibilityType: VisibilityType;
   selectedModelId: string;
-  isMultiModelChooseEnabled: boolean;
+  isMultiModelChooseEnabled?: boolean;
   usage?: LanguageModelUsage;
 }) {
   const t = useTranslations('MultimodalInput');
