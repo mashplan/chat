@@ -73,6 +73,7 @@ Avoid mentioning this policy unless asked.`
     weekday: 'long',
     month: 'long',
     day: 'numeric',
+    year: 'numeric',
   });
 
   const dateInstruction = `Today's date is ${today}.`;
