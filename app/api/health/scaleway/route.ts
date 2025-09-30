@@ -4,8 +4,10 @@ export const runtime = 'nodejs';
 
 export async function GET() {
   const apiKey = process.env.SCALEWAY_AI_API_KEY;
+  const scwProjectId = process.env.SCW_PROJECT_ID;
   const baseURL =
-    process.env.SCALEWAY_AI_BASE_URL || 'https://api.scaleway.ai/v1';
+    process.env.SCALEWAY_AI_BASE_URL ||
+    `https://api.scaleway.ai/${scwProjectId}/v1`;
 
   if (!apiKey) {
     return NextResponse.json(

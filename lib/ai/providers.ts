@@ -31,8 +31,15 @@ const bergetAiProvider = createOpenAICompatible({
 });
 
 // Scaleway provider configuration
+const scwProjectId = process.env.SCW_PROJECT_ID;
 const scalewayBaseURL =
-  process.env.SCALEWAY_AI_BASE_URL || 'https://api.scaleway.ai/v1';
+  process.env.SCALEWAY_AI_BASE_URL ||
+  `https://api.scaleway.ai/${scwProjectId}/v1`;
+if (!isTestEnvironment && !process.env.SCALEWAY_AI_API_KEY) {
+  console.warn(
+    'SCALEWAY_AI_API_KEY is not set. Scaleway models will not be available.',
+  );
+}
 const scalewayProvider = createOpenAICompatible({
   name: 'scaleway',
   apiKey: process.env.SCALEWAY_AI_API_KEY || 'dummy-key-for-tests',

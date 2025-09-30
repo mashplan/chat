@@ -17,6 +17,9 @@ Set these in your container settings:
 POSTGRES_URL=postgresql://user:password@host:5432/database
 AUTH_SECRET=your-auth-secret
 NEXT_PUBLIC_APP_URL=https://<container>.functions.fnc.<region>.scw.cloud
+SCALEWAY_AI_API_KEY=your-scaleway-generative-ai-key
+## Optional: override if you use a project-scoped endpoint
+# SCALEWAY_AI_BASE_URL=https://api.scaleway.ai/<project-id>/v1
 
 # Optional providers
 XAI_API_KEY=...
@@ -43,6 +46,8 @@ FIRECRAWL_API_KEY=your-firecrawl-api-key-here
 Notes:
 - Normal env vars are limited to 1000 chars. Use the Secrets section for long values.
 - The image runs `./start.sh` on startup.
+- Scaleway OpenAI-compatible base URL defaults to `https://api.scaleway.ai/openai/v1`.
+- Health check is available at `/api/health/scaleway` and should return 200.
 
 #### Build and deploy (manual)
 
