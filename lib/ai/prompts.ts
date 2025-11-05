@@ -83,13 +83,9 @@ Avoid mentioning this policy unless asked.`
     selectedChatModel === 'deepseek-r1' ||
     selectedChatModel === 'openai-gpt-oss-120b'
   ) {
-    return `${regularPrompt}\n\n${requestPrompt}\n\n${dateInstruction}${
-      languageInstruction ? `\n\n${languageInstruction}` : ''
-    }`;
+    return `${regularPrompt}\n\n${requestPrompt}\n\n${dateInstruction}\n\n${languageInstruction}`;
   } else {
-    return `${regularPrompt}\n\n${requestPrompt}\n\n${dateInstruction}\n\n${artifactsPrompt}${
-      languageInstruction ? `\n\n${languageInstruction}` : ''
-    }`;
+    return `${regularPrompt}\n\n${requestPrompt}\n\n${dateInstruction}\n\n${artifactsPrompt}\n\n${languageInstruction}`;
   }
 };
 

@@ -1,6 +1,6 @@
 ### Berget AI Integration
 
-This app integrates [Berget AI](https://api.berget.ai/) using a custom provider that implements the AI SDK v2 specification.
+This app integrates [Berget AI](https://api.berget.ai/) using the standard OpenAI‑compatible provider from the Vercel AI SDK.
 
 Configuration
 
@@ -10,8 +10,7 @@ BERGET_AI_API_KEY=your_api_key
 
 Key files
 
-- `lib/ai/providers/berget-provider.ts` — custom provider (payload shaping, tool support, reasoning extraction, stream synthesis)
-- `lib/ai/providers.ts` — currently wires most Berget models via OpenAI‑compatible provider; OpenAi OSS model is routed through the custom provider for fallback synthesis.
+- `lib/ai/providers.ts` — wires all Berget models via the OpenAI‑compatible provider with reasoning middleware where needed.
 
 Models and capabilities (verified)
 
@@ -35,24 +34,18 @@ How tools are sent
 
 Reasoning UI
 
-- Some endpoints (e.g., GPT‑OSS) embed pseudo‑reasoning inside the text (e.g., `<think>…</think>` or `analysis … assistantfinal …`). The provider extracts this and emits AI SDK reasoning parts so the UI shows a proper “thinking” block, similar to DeepSeek R1.
+- Some endpoints (e.g., GPT‑OSS, DeepSeek R1) embed reasoning inside the text using `<think>…</think>` tags. The `extractReasoningMiddleware` extracts these and emits AI SDK reasoning parts so the UI shows a proper "thinking" block.
 
 Streaming
 
-- If Berget responds with SSE in an unexpected shape, the custom provider can synthesize a stream from a non‑streaming JSON response so the UI still renders deltas.
+- All Berget models now stream properly using standard OpenAI‑compatible SSE format with `choices[].delta.content` and `choices[].delta.reasoning_content`.
+- ✅ **GPT-OSS streaming issue resolved** (as of Nov 2025): Previously GPT‑OSS would send only a `finish` without deltas, but Berget AI has fixed their API and streaming now works correctly. See resolved ticket: `docs/support-tickets/berget-oss-streaming-ticket.md`.
 
 Model routing and current behavior
 
-- Llama 3.3 70B and Magistral Small 2506: use the OpenAI‑compatible provider; stream text normally; reasoning is handled by middleware.
-- Qwen3 32B: OpenAI‑compatible provider; streams thinking and text; reasoning middleware extracts `<think>` when present.
-- OpenAI GPT‑OSS 120B: uses the custom Berget provider with a non‑streaming fallback and synthesized stream because the OpenAI‑compatible path frequently emits only `finish` without deltas. UI workaround added to allow follow‑ups if a stream gets stuck.
-
-Known limitation (OSS)
-
-- On OpenAI‑compatible streaming, GPT‑OSS sometimes sends a `finish` without any prior deltas, which can leave clients waiting. We added:
-  - Provider fallback: if no deltas arrive, perform a non‑streaming request and synthesize reasoning/text.
-  - UI workaround: when submitting a follow‑up on OSS while status is not `ready`, we call `stop()` then immediately submit to clear any stale stream state.
-  - A support ticket (`docs/support-tickets/berget-oss-streaming-ticket.md`) requesting standardized streaming for OSS.
+- **All models** use the OpenAI‑compatible provider and stream text/reasoning normally
+- Models with reasoning capabilities (GPT‑OSS, DeepSeek R1, Qwen3 32B): wrapped with `extractReasoningMiddleware({ tagName: 'think' })` to extract `<think>` tags
+- Models without reasoning (Llama 3.3 70B, Magistral Small 2506): use the provider directly
 
 Debugging & scripts
 
@@ -65,29 +58,40 @@ DEBUG=true
 - Standalone probes (outside the AI SDK):
   - `pnpm test:berget:tools` — sends a single request with a function tool
   - `pnpm scan:berget:tools` — tests all models listed in `docs/external/berget-ai-models.json` for tool support
+  - `pnpm test:berget:streaming` — verifies GPT‑OSS streaming works correctly (273+ deltas expected)
 
 Notes & limitations
 
-- Tool behavior depends on the specific Berget endpoint for a model; GPT‑OSS currently rejects tools on Berget even though the base model supports tools elsewhere.
-- If you add new project tools, extend the mapper in `buildBergetToolSchemas` inside `berget-provider.ts`.
+- Tool behavior depends on the specific Berget endpoint for a model; GPT‑OSS currently rejects tools on Berget even though the base model may support tools elsewhere.
+- Tool schemas are defined inline in `lib/ai/tools/` and automatically registered with the AI SDK.
 
 ### Add another Berget model
 
-Follow these steps to add a new chat model backed by Berget AI. This ensures the model is selectable in the UI, allowed by the API schema, wired to the custom provider, and—if supported—receives tool schemas.
+Follow these steps to add a new chat model backed by Berget AI. This ensures the model is selectable in the UI, allowed by the API schema, and properly configured.
 
 1) Register the model with the provider
 
 - File: `lib/ai/providers.ts`
-- Add a new entry under `languageModels` using `new BergetChatLanguageModel('<BERGET_MODEL_ID>', { baseURL: 'https://api.berget.ai/v1', provider: 'berget-ai', headers: () => ({ Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}` }) })`.
-  Example (Qwen3 32B):
+- Add a new entry under `languageModels` using the `bergetAiProvider` (OpenAI‑compatible provider).
+- If the model supports reasoning via `<think>` tags, wrap it with `extractReasoningMiddleware`.
+  
+  Example (Qwen3 32B with reasoning):
   ```ts
-  'qwen3-32b': new BergetChatLanguageModel('Qwen/Qwen3-32B', {
-    baseURL: 'https://api.berget.ai/v1',
-    provider: 'berget-ai',
-    headers: () => ({
-      Authorization: `Bearer ${process.env.BERGET_AI_API_KEY ?? ''}`,
+  'qwen3-32b': withDebug(
+    wrapLanguageModel({
+      model: bergetAiProvider('Qwen/Qwen3-32B'),
+      middleware: extractReasoningMiddleware({ tagName: 'think' }),
     }),
-  }) as any,
+    'berget-ai:Qwen/Qwen3-32B',
+  ),
+  ```
+  
+  Example (Llama 3.3 70B without reasoning):
+  ```ts
+  'llama-chat': withDebug(
+    bergetAiProvider('meta-llama/Llama-3.3-70B-Instruct'),
+    'berget-ai:meta-llama/Llama-3.3-70B-Instruct',
+  ),
   ```
 
 2) Allow the model in the chat request schema
@@ -118,21 +122,7 @@ Follow these steps to add a new chat model backed by Berget AI. This ensures the
   },
   ```
 
-4) Gate tool-calling support (only for models that truly support tools)
-
-- File: `lib/ai/providers/berget-provider.ts`
-- Add the Berget model id to `TOOL_SUPPORTED_MODELS` if and only if tool calling works for that endpoint. If tools are not supported, do not add it—the provider will automatically omit `tools/functions` to avoid 400 errors.
-  ```ts
-  const TOOL_SUPPORTED_MODELS = new Set<string>([
-    'meta-llama/Llama-3.1-8B-Instruct',
-    'meta-llama/Llama-3.3-70B-Instruct',
-    'mistralai/Devstral-Small-2505',
-    'mistralai/Magistral-Small-2506',
-    'Qwen/Qwen3-32B', // add here only if verified
-  ]);
-  ```
-
-5) Verify with the probe scripts
+4) Verify with the probe scripts
 
 - Run the standalone probe against Berget to confirm behavior before and after wiring:
   ```bash
@@ -142,9 +132,8 @@ Follow these steps to add a new chat model backed by Berget AI. This ensures the
   # Scan all known Berget models listed in docs/external/berget-ai-models.json
   BERGET_AI_API_KEY=sk-... pnpm scan:berget:tools
   ```
-- If the model returns 400 when tools are present, remove it from `TOOL_SUPPORTED_MODELS` to disable tools for that model.
 
-6) Environment
+5) Environment
 
 - Ensure `BERGET_AI_API_KEY` is set in the runtime environment:
   ```env
