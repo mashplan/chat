@@ -4,6 +4,9 @@
 /* include utility classes in streamdown */
 @source '../node_modules/streamdown/dist/index.js';
 
+/* KaTeX CSS for math rendering */
+@import 'katex/dist/katex.min.css';
+
 /* custom variant for setting dark mode programmatically */
 @custom-variant dark (&:is(.dark, .dark *));
 
@@ -149,6 +152,7 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
+
   *,
   ::after,
   ::before,
@@ -231,22 +235,22 @@
 
 .cm-editor,
 .cm-gutters {
-  @apply bg-background! dark:bg-zinc-800! outline-hidden! selection:bg-zinc-900!;
+  @apply bg-background ! dark:bg-zinc-800 ! outline-hidden ! selection:bg-zinc-900 !;
 }
 
-.ͼo.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
+.ͼo.cm-focused>.cm-scroller>.cm-selectionLayer .cm-selectionBackground,
 .ͼo.cm-selectionBackground,
 .ͼo.cm-content::selection {
-  @apply bg-zinc-200! dark:bg-zinc-900!;
+  @apply bg-zinc-200 ! dark:bg-zinc-900 !;
 }
 
 .cm-activeLine,
 .cm-activeLineGutter {
-  @apply bg-transparent!;
+  @apply bg-transparent !;
 }
 
 .cm-activeLine {
-  @apply rounded-r-sm!;
+  @apply rounded-r-sm !;
 }
 
 .cm-lineNumbers {
@@ -258,7 +262,7 @@
 }
 
 .cm-lineNumbers .cm-activeLineGutter {
-  @apply rounded-l-sm!;
+  @apply rounded-l-sm !;
 }
 
 .suggestion-highlight {
