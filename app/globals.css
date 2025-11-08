@@ -233,24 +233,38 @@
   outline: none;
 }
 
+/*
+  IMPORTANT: Tailwind CSS v4 important modifier syntax
+  
+  In Tailwind CSS v4, the `!` important modifier must be attached directly
+  to the utility class name WITHOUT spaces. Both syntaxes are valid:
+  - Prefix: `!bg-background` ✅
+  - Suffix: `bg-background!` ✅
+  
+  DO NOT add spaces: `bg-background !` ❌
+  This will cause: "Error: Cannot apply unknown utility class `!`"
+  
+  Formatters may try to add spaces around `!` - be careful when running
+  auto-format on this file. Biome CSS formatting is disabled to prevent this.
+*/
 .cm-editor,
 .cm-gutters {
-  @apply bg-background ! dark:bg-zinc-800 ! outline-hidden ! selection:bg-zinc-900 !;
+  @apply !bg-background dark:!bg-zinc-800 !outline-hidden selection:!bg-zinc-900;
 }
 
 .ͼo.cm-focused>.cm-scroller>.cm-selectionLayer .cm-selectionBackground,
 .ͼo.cm-selectionBackground,
 .ͼo.cm-content::selection {
-  @apply bg-zinc-200 ! dark:bg-zinc-900 !;
+  @apply !bg-zinc-200 dark:!bg-zinc-900;
 }
 
 .cm-activeLine,
 .cm-activeLineGutter {
-  @apply bg-transparent !;
+  @apply !bg-transparent;
 }
 
 .cm-activeLine {
-  @apply rounded-r-sm !;
+  @apply !rounded-r-sm;
 }
 
 .cm-lineNumbers {
@@ -262,7 +276,7 @@
 }
 
 .cm-lineNumbers .cm-activeLineGutter {
-  @apply rounded-l-sm !;
+  @apply !rounded-l-sm;
 }
 
 .suggestion-highlight {
