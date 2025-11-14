@@ -145,21 +145,22 @@ export const searchWeb = tool({
     }
 
     console.log('[searchWeb] FIRECRAWL_API_KEY found, proceeding with search');
+    
+    // Build options conservatively and avoid sending undefined fields
+    const baseOptions: any = {
+      limit: maxResults ?? 5,
+      timeout: DEFAULT_TIMEOUT_MS,
+      scrapeOptions: {
+        formats: ['markdown'],
+        onlyMainContent: true,
+      },
+    };
+
     try {
       const anonymizedQuery = anonymizeQuery(query);
       console.log(`Searching the web (Firecrawl) for: "${anonymizedQuery}"...`);
 
       const client = new FirecrawlApp({ apiKey: firecrawlApiKey });
-
-      // Build options conservatively and avoid sending undefined fields
-      const baseOptions: any = {
-        limit: maxResults ?? 5,
-        timeout: DEFAULT_TIMEOUT_MS,
-        scrapeOptions: {
-          formats: ['markdown'],
-          onlyMainContent: true,
-        },
-      };
 
       if (tbs) baseOptions.tbs = tbs;
       if (Array.isArray(sources) && sources.length > 0) {
