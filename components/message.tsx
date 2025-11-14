@@ -1,29 +1,29 @@
 'use client';
+import type { UseChatHelpers } from '@ai-sdk/react';
+import equal from 'fast-deep-equal';
 import { motion } from 'framer-motion';
 import { memo, useState } from 'react';
 import type { Vote } from '@/lib/db/schema';
+import type { ChatMessage } from '@/lib/types';
+import { cn, sanitizeText } from '@/lib/utils';
+import { useDataStream } from './data-stream-provider';
 import { DocumentToolResult } from './document';
-import { LoaderIcon, SparklesIcon } from './icons';
-import { Response } from './elements/response';
+import { DocumentPreview } from './document-preview';
 import { MessageContent } from './elements/message';
+import { Response } from './elements/response';
 import {
   Tool,
-  ToolHeader,
   ToolContent,
+  ToolHeader,
   ToolInput,
   ToolOutput,
 } from './elements/tool';
+import { LoaderIcon, SparklesIcon } from './icons';
 import { MessageActions } from './message-actions';
+import { MessageEditor } from './message-editor';
+import { MessageReasoning } from './message-reasoning';
 import { PreviewAttachment } from './preview-attachment';
 import { Weather } from './weather';
-import equal from 'fast-deep-equal';
-import { cn, sanitizeText } from '@/lib/utils';
-import { MessageEditor } from './message-editor';
-import { DocumentPreview } from './document-preview';
-import { MessageReasoning } from './message-reasoning';
-import type { UseChatHelpers } from '@ai-sdk/react';
-import type { ChatMessage } from '@/lib/types';
-import { useDataStream } from './data-stream-provider';
 import { CodeBlock } from './elements/code-block';
 
 const PurePreviewMessage = ({
@@ -57,11 +57,11 @@ const PurePreviewMessage = ({
 
   return (
     <motion.div
-      data-testid={`message-${message.role}`}
-      className="group/message w-full"
-      initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      className="group/message w-full"
       data-role={message.role}
+      data-testid={`message-${message.role}`}
+      initial={{ opacity: 0 }}
     >
       <div
         className={cn('flex w-full items-start gap-2 md:gap-3', {
@@ -99,17 +99,17 @@ const PurePreviewMessage = ({
         >
           {attachmentsFromMessage.length > 0 && (
             <div
-              data-testid={`message-attachments`}
               className="flex flex-row justify-end gap-2"
+              data-testid={'message-attachments'}
             >
               {attachmentsFromMessage.map((attachment) => (
                 <PreviewAttachment
-                  key={attachment.url}
                   attachment={{
                     name: attachment.filename ?? 'file',
                     contentType: attachment.mediaType,
                     url: attachment.url,
                   }}
+                  key={attachment.url}
                 />
               ))}
             </div>
@@ -129,48 +129,35 @@ const PurePreviewMessage = ({
             )}
 
           {(() => {
-            // Find the first non-reasoning part
-            const firstNonReasoningIndex =
-              message.parts?.findIndex(
-                (part) =>
-                  part.type !== 'reasoning' ||
-                  !part.text?.trim() ||
-                  part.text.trim().length === 0,
-              ) ?? -1;
+            // Find the last text part and collect reasoning parts that come after it
+            let lastTextIndex = -1;
+            message.parts?.forEach((part, index) => {
+              if (part.type === 'text') {
+                lastTextIndex = index;
+              }
+            });
 
-            // Collect reasoning parts that come before the first non-reasoning part
-            const leadingReasoningParts: typeof message.parts = [];
+            const reasoningAfterText: typeof message.parts = [];
             const renderedReasoningIndices = new Set<number>();
 
-            if (firstNonReasoningIndex > 0) {
+            if (lastTextIndex >= 0) {
               message.parts?.forEach((part, index) => {
                 if (
-                  index < firstNonReasoningIndex &&
+                  index > lastTextIndex &&
                   part.type === 'reasoning' &&
                   part.text?.trim().length > 0
                 ) {
-                  leadingReasoningParts.push(part);
+                  reasoningAfterText.push(part);
                   renderedReasoningIndices.add(index);
                 }
               });
             }
 
-            // Render leading reasoning parts first, then all parts in order
-            // (skipping reasoning parts already rendered at the top)
+            // Render parts in order, but insert reasoning-after-text before the last text part
             return (
               <>
-                {leadingReasoningParts.map((part, index) => {
-                  const key = `message-${message.id}-reasoning-${index}`;
-                  return (
-                    <MessageReasoning
-                      key={key}
-                      isLoading={isLoading}
-                      reasoning={part.text}
-                    />
-                  );
-                })}
                 {message.parts?.map((part, index) => {
-                  // Skip reasoning parts that were already rendered at the top
+                  // Skip reasoning parts that will be inserted before text
                   if (renderedReasoningIndices.has(index)) {
                     return null;
                   }
@@ -178,11 +165,83 @@ const PurePreviewMessage = ({
                   const { type } = part;
                   const key = `message-${message.id}-part-${index}`;
 
+                  // Insert reasoning-after-text before the last text part
+                  if (
+                    type === 'text' &&
+                    index === lastTextIndex &&
+                    reasoningAfterText.length > 0
+                  ) {
+                    return (
+                      <>
+                        {reasoningAfterText.map((reasoningPart) => {
+                          if (
+                            reasoningPart.type === 'reasoning' &&
+                            reasoningPart.text
+                          ) {
+                            return (
+                              <MessageReasoning
+                                isLoading={isLoading}
+                                key={`${key}-reasoning-${reasoningPart.text.substring(0, 20)}`}
+                                reasoning={reasoningPart.text}
+                              />
+                            );
+                          }
+                          return null;
+                        })}
+                        {(() => {
+                          if (mode === 'view') {
+                            return (
+                              <div key={key}>
+                                <MessageContent
+                                  className={cn({
+                                    'w-fit break-words rounded-2xl px-3 py-2 text-right text-white':
+                                      message.role === 'user',
+                                    'bg-transparent px-0 py-0 text-left':
+                                      message.role === 'assistant',
+                                  })}
+                                  data-testid="message-content"
+                                  style={
+                                    message.role === 'user'
+                                      ? { backgroundColor: '#006cff' }
+                                      : undefined
+                                  }
+                                >
+                                  <Response>{sanitizeText(part.text)}</Response>
+                                </MessageContent>
+                              </div>
+                            );
+                          }
+
+                          if (mode === 'edit') {
+                            return (
+                              <div
+                                className="flex w-full flex-row items-start gap-3"
+                                key={key}
+                              >
+                                <div className="size-8" />
+                                <div className="min-w-0 flex-1">
+                                  <MessageEditor
+                                    key={message.id}
+                                    message={message}
+                                    regenerate={regenerate}
+                                    setMessages={setMessages}
+                                    setMode={setMode}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </>
+                    );
+                  }
+
                   if (type === 'reasoning' && part.text?.trim().length > 0) {
                     return (
                       <MessageReasoning
-                        key={key}
                         isLoading={isLoading}
+                        key={key}
                         reasoning={part.text}
                       />
                     );
@@ -193,13 +252,13 @@ const PurePreviewMessage = ({
                       return (
                         <div key={key}>
                           <MessageContent
-                            data-testid="message-content"
                             className={cn({
                               'w-fit break-words rounded-2xl px-3 py-2 text-right text-white':
                                 message.role === 'user',
                               'bg-transparent px-0 py-0 text-left':
                                 message.role === 'assistant',
                             })}
+                            data-testid="message-content"
                             style={
                               message.role === 'user'
                                 ? { backgroundColor: '#006cff' }
@@ -215,17 +274,17 @@ const PurePreviewMessage = ({
                     if (mode === 'edit') {
                       return (
                         <div
-                          key={key}
                           className="flex w-full flex-row items-start gap-3"
+                          key={key}
                         >
                           <div className="size-8" />
                           <div className="min-w-0 flex-1">
                             <MessageEditor
                               key={message.id}
                               message={message}
-                              setMode={setMode}
-                              setMessages={setMessages}
                               regenerate={regenerate}
+                              setMessages={setMessages}
+                              setMode={setMode}
                             />
                           </div>
                         </div>
@@ -237,18 +296,18 @@ const PurePreviewMessage = ({
                     const { toolCallId, state } = part;
 
                     return (
-                      <Tool key={toolCallId} defaultOpen={true}>
-                        <ToolHeader type="tool-getWeather" state={state} />
+                      <Tool defaultOpen={true} key={toolCallId}>
+                        <ToolHeader state={state} type="tool-getWeather" />
                         <ToolContent>
                           {state === 'input-available' && (
                             <ToolInput input={part.input} />
                           )}
                           {state === 'output-available' && (
                             <ToolOutput
+                              errorText={undefined}
                               output={
                                 <Weather weatherAtLocation={part.output} />
                               }
-                              errorText={undefined}
                             />
                           )}
                         </ToolContent>
@@ -262,8 +321,8 @@ const PurePreviewMessage = ({
                     if (part.output && 'error' in part.output) {
                       return (
                         <div
-                          key={toolCallId}
                           className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
+                          key={toolCallId}
                         >
                           Error creating document: {String(part.output.error)}
                         </div>
@@ -272,8 +331,8 @@ const PurePreviewMessage = ({
 
                     return (
                       <DocumentPreview
-                        key={toolCallId}
                         isReadonly={isReadonly}
+                        key={toolCallId}
                         result={part.output}
                       />
                     );
@@ -285,8 +344,8 @@ const PurePreviewMessage = ({
                     if (part.output && 'error' in part.output) {
                       return (
                         <div
-                          key={toolCallId}
                           className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
+                          key={toolCallId}
                         >
                           Error updating document: {String(part.output.error)}
                         </div>
@@ -294,11 +353,11 @@ const PurePreviewMessage = ({
                     }
 
                     return (
-                      <div key={toolCallId} className="relative">
+                      <div className="relative" key={toolCallId}>
                         <DocumentPreview
+                          args={{ ...part.output, isUpdate: true }}
                           isReadonly={isReadonly}
                           result={part.output}
-                          args={{ ...part.output, isUpdate: true }}
                         />
                       </div>
                     );
@@ -308,10 +367,10 @@ const PurePreviewMessage = ({
                     const { toolCallId, state } = part;
 
                     return (
-                      <Tool key={toolCallId} defaultOpen={true}>
+                      <Tool defaultOpen={true} key={toolCallId}>
                         <ToolHeader
-                          type="tool-requestSuggestions"
                           state={state}
+                          type="tool-requestSuggestions"
                         />
                         <ToolContent>
                           {state === 'input-available' && (
@@ -319,6 +378,7 @@ const PurePreviewMessage = ({
                           )}
                           {state === 'output-available' && (
                             <ToolOutput
+                              errorText={undefined}
                               output={
                                 'error' in part.output ? (
                                   <div className="rounded border p-2 text-red-500">
@@ -326,13 +386,12 @@ const PurePreviewMessage = ({
                                   </div>
                                 ) : (
                                   <DocumentToolResult
-                                    type="request-suggestions"
-                                    result={part.output}
                                     isReadonly={isReadonly}
+                                    result={part.output}
+                                    type="request-suggestions"
                                   />
                                 )
                               }
-                              errorText={undefined}
                             />
                           )}
                         </ToolContent>
@@ -553,6 +612,8 @@ const PurePreviewMessage = ({
                       </Tool>
                     );
                   }
+
+                  return null;
                 })}
               </>
             );
@@ -560,12 +621,12 @@ const PurePreviewMessage = ({
 
           {!isReadonly && (
             <MessageActions
-              key={`action-${message.id}`}
               chatId={chatId}
-              message={message}
-              vote={vote}
               isLoading={isLoading}
+              key={`action-${message.id}`}
+              message={message}
               setMode={setMode}
+              vote={vote}
             />
           )}
         </div>
@@ -577,12 +638,21 @@ const PurePreviewMessage = ({
 export const PreviewMessage = memo(
   PurePreviewMessage,
   (prevProps, nextProps) => {
-    if (prevProps.isLoading !== nextProps.isLoading) return false;
-    if (prevProps.message.id !== nextProps.message.id) return false;
-    if (prevProps.requiresScrollPadding !== nextProps.requiresScrollPadding)
+    if (prevProps.isLoading !== nextProps.isLoading) {
       return false;
-    if (!equal(prevProps.message.parts, nextProps.message.parts)) return false;
-    if (!equal(prevProps.vote, nextProps.vote)) return false;
+    }
+    if (prevProps.message.id !== nextProps.message.id) {
+      return false;
+    }
+    if (prevProps.requiresScrollPadding !== nextProps.requiresScrollPadding) {
+      return false;
+    }
+    if (!equal(prevProps.message.parts, nextProps.message.parts)) {
+      return false;
+    }
+    if (!equal(prevProps.vote, nextProps.vote)) {
+      return false;
+    }
 
     return false;
   },
@@ -593,11 +663,13 @@ export const ThinkingMessage = () => {
 
   return (
     <motion.div
-      data-testid="message-assistant-loading"
-      className="group/message w-full"
-      initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      className="group/message w-full"
       data-role={role}
+      data-testid="message-assistant-loading"
+      exit={{ opacity: 0, transition: { duration: 0.5 } }}
+      initial={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
     >
       <div className="flex items-start justify-start gap-3">
         <div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
