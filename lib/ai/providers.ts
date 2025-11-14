@@ -6,7 +6,7 @@ import {
 import { anthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import type { LanguageModelV2Middleware } from '@ai-sdk/provider';
+import type { LanguageModelMiddleware } from 'ai';
 // import { gateway } from '@ai-sdk/gateway';
 import { isDebugEnabled, isTestEnvironment } from '../constants';
 
@@ -66,27 +66,27 @@ export const myProvider = isTestEnvironment
     })()
   : customProvider({
       languageModels: {
-        'chat-model': anthropic('claude-sonnet-4-20250514'),
+        'chat-model': anthropic('claude-sonnet-4-20250514') as any,
         'chat-model-reasoning': wrapLanguageModel({
-          model: bergetAiProvider('unsloth/MAI-DS-R1-GGUF'),
+          model: bergetAiProvider('unsloth/MAI-DS-R1-GGUF') as any,
           middleware: extractReasoningMiddleware({ tagName: 'think' }),
         }),
         'title-model': withDebug(
-          bergetAiProvider('mistralai/Magistral-Small-2506'),
+          bergetAiProvider('mistralai/Magistral-Small-2506') as any,
           'berget-ai:mistralai/Magistral-Small-2506',
         ),
-        'artifact-model': anthropic('claude-sonnet-4-20250514'),
+        'artifact-model': anthropic('claude-sonnet-4-20250514') as any,
         // Berget AI models
         'deepseek-r1': withDebug(
           wrapLanguageModel({
-            model: bergetAiProvider('unsloth/MAI-DS-R1-GGUF'),
+            model: bergetAiProvider('unsloth/MAI-DS-R1-GGUF') as any,
             middleware: extractReasoningMiddleware({ tagName: 'think' }),
           }),
           'berget-ai:unsloth/MAI-DS-R1-GGUF',
         ),
         'openai-gpt-oss-120b': withDebug(
           wrapLanguageModel({
-            model: bergetAiProvider('openai/gpt-oss-120b'),
+            model: bergetAiProvider('openai/gpt-oss-120b') as any,
             middleware: extractReasoningMiddleware({ tagName: 'think' }),
           }),
           'berget-ai:openai/gpt-oss-120b',
@@ -102,7 +102,7 @@ export const myProvider = isTestEnvironment
         // Qwen 3 32B via Berget AI
         'qwen3-32b': withDebug(
           wrapLanguageModel({
-            model: bergetAiProvider('Qwen/Qwen3-32B'),
+            model: bergetAiProvider('Qwen/Qwen3-32B') as any,
             middleware: extractReasoningMiddleware({ tagName: 'think' }),
           }),
           'berget-ai:Qwen/Qwen3-32B',
@@ -134,7 +134,7 @@ function withDebug(model: any, label: string) {
   });
 }
 
-function createDebugMiddleware(label: string): LanguageModelV2Middleware {
+function createDebugMiddleware(label: string): LanguageModelMiddleware {
   const safeJson = (obj: unknown) => {
     try {
       return JSON.stringify(obj);
@@ -150,6 +150,7 @@ function createDebugMiddleware(label: string): LanguageModelV2Middleware {
   };
 
   return {
+    specificationVersion: 'v3' as const,
     wrapGenerate: async ({ doGenerate, params }) => {
       try {
         console.log(

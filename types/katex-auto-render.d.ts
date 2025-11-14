@@ -23,4 +23,3 @@ declare module 'katex/contrib/auto-render' {
   const renderMathInElement: RenderMathInElement;
   export default renderMathInElement;
 }
-

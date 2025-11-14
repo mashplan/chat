@@ -2,6 +2,12 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import FirecrawlApp from '@mendable/firecrawl-js';
 
+const DEFAULT_TIMEOUT_MS =
+  Number(process.env.FIRECRAWL_TIMEOUT_MS || '') || 30000;
+const MAX_RETRIES = 1;
+const FIRECRAWL_DEBUG =
+  process.env.FIRECRAWL_DEBUG === 'true' || process.env.DEBUG === 'firecrawl';
+
 // Anonymize queries to protect user privacy
 function anonymizeQuery(query: string): string {
   // Remove potential personal identifiers
@@ -97,12 +103,48 @@ export const searchWeb = tool({
     categories,
     location,
   }) => {
+    // DEBUG: Check all environment variables
+    console.log('[searchWeb] Environment Variables Check:');
+    console.log(
+      '[searchWeb] process.env.FIRECRAWL_API_KEY:',
+      process.env.FIRECRAWL_API_KEY
+        ? `[SET] Length: ${process.env.FIRECRAWL_API_KEY.length}`
+        : '[NOT SET]',
+    );
+    console.log(
+      '[searchWeb] process.env.NEXT_PUBLIC_*:',
+      Object.keys(process.env)
+        .filter((key) => key.startsWith('NEXT_PUBLIC_'))
+        .map((key) => `${key}=${process.env[key]?.substring(0, 10)}...`),
+    );
+    console.log(
+      '[searchWeb] All keys starting with FIRE:',
+      Object.keys(process.env).filter((key) =>
+        key.toUpperCase().includes('FIRE'),
+      ),
+    );
+
     const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
 
     if (!firecrawlApiKey) {
-      throw new Error('FIRECRAWL_API_KEY environment variable is not set');
+      console.error('[searchWeb] FIRECRAWL_API_KEY is missing!', {
+        isDevelopment: process.env.NODE_ENV === 'development',
+        envKeys: Object.keys(process.env).length,
+        hasFirecrawlKey: 'FIRECRAWL_API_KEY' in process.env,
+      });
+      console.warn(
+        'FIRECRAWL_API_KEY not set. Add it to .env.local for web search to work.',
+      );
+      return {
+        results: [],
+        message:
+          'Web search is not configured. Please set FIRECRAWL_API_KEY environment variable.',
+        error:
+          'FIRECRAWL_API_KEY environment variable is not set. Web search requires Firecrawl API key from https://www.firecrawl.dev/',
+      };
     }
 
+    console.log('[searchWeb] FIRECRAWL_API_KEY found, proceeding with search');
     try {
       const anonymizedQuery = anonymizeQuery(query);
       console.log(`Searching the web (Firecrawl) for: "${anonymizedQuery}"...`);
@@ -112,7 +154,7 @@ export const searchWeb = tool({
       // Build options conservatively and avoid sending undefined fields
       const baseOptions: any = {
         limit: maxResults ?? 5,
-        timeout: 120000,
+        timeout: DEFAULT_TIMEOUT_MS,
         scrapeOptions: {
           formats: ['markdown'],
           onlyMainContent: true,
@@ -130,7 +172,44 @@ export const searchWeb = tool({
       }
       if (location) baseOptions.location = location;
 
-      const response = await client.search(query, baseOptions);
+      async function runOnce() {
+        if (FIRECRAWL_DEBUG) {
+          console.log('[searchWeb] Firecrawl request options:', {
+            limit: baseOptions.limit,
+            timeout: baseOptions.timeout,
+            sources: baseOptions.sources,
+            categories: baseOptions.categories,
+            location: baseOptions.location,
+          });
+        }
+        const res = await client.search(query, baseOptions);
+        if (FIRECRAWL_DEBUG) {
+          console.log('[searchWeb] Firecrawl raw response (truncated):', {
+            hasData: Boolean(res),
+            type: typeof res,
+          });
+        }
+        return res;
+      }
+
+      let response: any;
+      try {
+        response = await runOnce();
+      } catch (err: any) {
+        const isTimeout =
+          err?.code === 'ETIMEDOUT' ||
+          (typeof err?.message === 'string' &&
+            err.message.toLowerCase().includes('timeout'));
+        if (isTimeout && MAX_RETRIES > 0) {
+          console.warn(
+            '[searchWeb] Firecrawl timeout, retrying once with shorter timeout…',
+          );
+          baseOptions.timeout = Math.min(DEFAULT_TIMEOUT_MS, 20000);
+          response = await runOnce();
+        } else {
+          throw err;
+        }
+      }
       // console.log('Firecrawl search response:', response);
 
       // The SDK returns the data object directly (no `success` wrapper)
@@ -189,9 +268,28 @@ export const searchWeb = tool({
       };
     } catch (error) {
       console.error('Web search error:', error);
-      throw new Error(
-        `Failed to search the web: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
+      if (FIRECRAWL_DEBUG) {
+        try {
+          console.error('[searchWeb] debug details:', {
+            code: (error as any)?.code,
+            status: (error as any)?.status || (error as any)?.response?.status,
+            data:
+              (error as any)?.response?.data ||
+              (error as any)?.data ||
+              '[no response data]',
+            timeoutUsed: baseOptions?.timeout,
+          });
+        } catch {}
+      }
+      // Fail open: return a structured empty result so upstream can continue.
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Unknown error while searching';
+      return {
+        results: [],
+        message: `Search failed: ${message}`,
+      };
     }
   },
 });

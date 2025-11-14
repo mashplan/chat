@@ -3,6 +3,7 @@ import {
   createUIMessageStream,
   JsonToSseTransformStream,
   type LanguageModelUsage,
+  generateText,
   smoothStream,
   stepCountIs,
   streamText,
@@ -31,6 +32,7 @@ import { scrapeUrl } from '@/lib/ai/tools/scrape-url';
 import {
   isProductionEnvironment,
   isMultiModelChooseEnabled,
+  fallbackSearchIntentModels,
 } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { FORCED_CHAT_MODEL_ID } from '@/lib/ai/models';
@@ -50,6 +52,87 @@ import type { VisibilityType } from '@/components/visibility-selector';
 export const maxDuration = 60;
 
 let globalStreamContext: ResumableStreamContext | null = null;
+
+// --- Helper utilities for fallback search/scrape intent flow ---
+const SEARCH_INTENT_REGEX = /<search_intent>([\s\S]*?)<\/search_intent>/i;
+const SCRAPE_INTENT_REGEX = /<scrape_intent>([\s\S]*?)<\/scrape_intent>/i;
+
+function extractSearchIntent(
+  text: string,
+): { query: string; maxResults?: number; tbs?: string | null } | null {
+  try {
+    const match = text.match(SEARCH_INTENT_REGEX);
+    if (!match) return null;
+    const json = match[1].trim();
+    const intent = JSON.parse(json);
+    if (typeof intent?.query === 'string') {
+      return intent;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function extractScrapeIntent(text: string): {
+  url: string;
+  formats?: Array<'markdown' | 'html'>;
+  onlyMainContent?: boolean;
+} | null {
+  try {
+    const match = text.match(SCRAPE_INTENT_REGEX);
+    if (!match) return null;
+    const json = match[1].trim();
+    const intent = JSON.parse(json);
+    if (typeof intent?.url === 'string') {
+      return intent;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function formatSearchResultsForContext(args: {
+  query: string;
+  results: Array<{
+    title: string;
+    url: string;
+    description?: string;
+    content?: string;
+  }>;
+}) {
+  const lines: string[] = [];
+  lines.push(`Web search results for "${args.query}":`);
+  lines.push('');
+  args.results.slice(0, 5).forEach((r, i) => {
+    lines.push(`[${i + 1}] ${r.title || 'Untitled'} - ${r.url}`);
+    if (r.description) lines.push(r.description);
+    if (r.content) {
+      const preview =
+        r.content.length > 1200 ? `${r.content.slice(0, 1200)}…` : r.content;
+      lines.push('');
+      lines.push('Content preview:');
+      lines.push(preview);
+    }
+    lines.push('');
+  });
+  lines.push(
+    'Use the results above to answer the user. If uncertain, say what is unknown.',
+  );
+  return lines.join('\n');
+}
+
+function formatScrapedContentForContext(args: {
+  url: string;
+  content: string;
+}) {
+  const preview =
+    args.content.length > 3000
+      ? `${args.content.slice(0, 3000)}…`
+      : args.content;
+  return `Content scraped from ${args.url}:\n\n${preview}\n\nUse the content above to answer the user. If uncertain, say what is unknown.`;
+}
 
 export function getStreamContext() {
   if (!globalStreamContext) {
@@ -161,50 +244,180 @@ export async function POST(request: Request) {
     let finalUsage: LanguageModelUsage | undefined;
 
     const stream = createUIMessageStream({
-      execute: ({ writer: dataStream }) => {
+      execute: async ({ writer: dataStream }) => {
         const effectiveModelId = isMultiModelChooseEnabled
           ? selectedChatModel
           : (FORCED_CHAT_MODEL_ID as ChatModel['id']);
+        const isReasoningModel =
+          effectiveModelId === 'chat-model-reasoning' ||
+          effectiveModelId === 'deepseek-r1' ||
+          effectiveModelId === 'openai-gpt-oss-120b' ||
+          effectiveModelId === 'qwen3-32b';
+        const isSearchFallbackModel =
+          fallbackSearchIntentModels.includes(effectiveModelId);
+
+        console.log('[chat/route] Starting streamText with:');
+        console.log(
+          '[chat/route] Model:',
+          effectiveModelId,
+          '(isReasoningModel:',
+          isReasoningModel,
+          ')',
+        );
+        console.log(
+          '[chat/route] Tools configured:',
+          Object.keys({
+            getWeather,
+            searchWeb,
+            scrapeUrl,
+            createDocument,
+            updateDocument,
+            requestSuggestions,
+            generateImageTool,
+          }),
+        );
+
+        // Optional preflight: ask the model for search intent for fallback models
+        let messagesForStream = uiMessages;
+        if (isSearchFallbackModel) {
+          try {
+            const pre = await generateText({
+              model: myProvider.languageModel(effectiveModelId),
+              system: systemPrompt({
+                selectedChatModel: effectiveModelId,
+                requestHints,
+              }),
+              messages: convertToModelMessages(uiMessages),
+              stopWhen: stepCountIs(5),
+            });
+
+            const intent = extractSearchIntent(pre.text || '');
+            const scrapeIntent = extractScrapeIntent(pre.text || '');
+
+            if (intent?.query) {
+              console.log(
+                '[chat/route] Detected search intent. Running searchWeb fallback with:',
+                intent,
+              );
+              const searchOutput: any = await (searchWeb as any).execute(
+                {
+                  query: intent.query,
+                  maxResults: intent.maxResults ?? 5,
+                  tbs: intent.tbs ?? undefined,
+                  sources: ['web'],
+                  categories: [],
+                  location: undefined,
+                },
+                {},
+              );
+
+              const contextText = formatSearchResultsForContext({
+                query: intent.query,
+                results: (searchOutput?.results as any[]) ?? [],
+              });
+
+              const contextMessage: ChatMessage = {
+                id: generateUUID(),
+                role: 'system',
+                parts: [
+                  {
+                    type: 'text',
+                    text: contextText,
+                  },
+                ] as any,
+                metadata: {
+                  createdAt: new Date().toISOString(),
+                },
+              };
+
+              messagesForStream = [...uiMessages, contextMessage];
+            }
+
+            if (scrapeIntent?.url) {
+              console.log(
+                '[chat/route] Detected scrape intent. Running scrapeUrl fallback with:',
+                scrapeIntent,
+              );
+              const scrapeOutput: any = await (scrapeUrl as any).execute(
+                {
+                  url: scrapeIntent.url,
+                  formats: scrapeIntent.formats ?? ['markdown'],
+                  onlyMainContent:
+                    typeof scrapeIntent.onlyMainContent === 'boolean'
+                      ? scrapeIntent.onlyMainContent
+                      : true,
+                },
+                {},
+              );
+
+              const scrapedMarkdown =
+                (scrapeOutput?.content as string) ||
+                (scrapeOutput?.markdown as string) ||
+                '';
+              if (scrapedMarkdown) {
+                const scrapeContext = formatScrapedContentForContext({
+                  url: scrapeIntent.url,
+                  content: scrapedMarkdown,
+                });
+                const scrapeMsg: ChatMessage = {
+                  id: generateUUID(),
+                  role: 'system',
+                  parts: [{ type: 'text', text: scrapeContext } as any],
+                  metadata: { createdAt: new Date().toISOString() },
+                };
+                messagesForStream = [...messagesForStream, scrapeMsg];
+              }
+            }
+          } catch (e) {
+            console.warn(
+              '[chat/route] Preflight search intent or fallback search failed:',
+              e,
+            );
+          }
+        }
+
         const result = streamText({
           model: myProvider.languageModel(effectiveModelId),
           system: systemPrompt({
             selectedChatModel: effectiveModelId,
             requestHints,
           }),
-          messages: convertToModelMessages(uiMessages),
-          toolChoice: 'auto',
-          providerOptions: {
-            openai: {
-              tool_choice: 'auto',
-            },
-          },
-          stopWhen: stepCountIs(5),
-          experimental_activeTools:
-            effectiveModelId === 'chat-model-reasoning' ||
-            effectiveModelId === 'deepseek-r1'
-              ? []
-              : [
-                  'getWeather',
-                  'searchWeb',
-                  'scrapeUrl',
-                  'createDocument',
-                  'updateDocument',
-                  'requestSuggestions',
-                  'generateImageTool',
-                ],
+          messages: convertToModelMessages(messagesForStream),
+          toolChoice: isSearchFallbackModel ? 'none' : 'auto',
+          providerOptions: isSearchFallbackModel
+            ? undefined
+            : {
+                openai: {
+                  tool_choice: 'auto',
+                },
+              },
+          stopWhen: stepCountIs(isReasoningModel ? 20 : 5),
+          experimental_activeTools: isSearchFallbackModel
+            ? []
+            : [
+                'getWeather',
+                'searchWeb',
+                'scrapeUrl',
+                'createDocument',
+                'updateDocument',
+                'requestSuggestions',
+                'generateImageTool',
+              ],
           experimental_transform: smoothStream({ chunking: 'word' }),
-          tools: {
-            getWeather,
-            searchWeb,
-            scrapeUrl,
-            createDocument: createDocument({ session, dataStream }),
-            updateDocument: updateDocument({ session, dataStream }),
-            requestSuggestions: requestSuggestions({
-              session,
-              dataStream,
-            }),
-            generateImageTool,
-          },
+          tools: isSearchFallbackModel
+            ? undefined
+            : {
+                getWeather,
+                searchWeb,
+                scrapeUrl,
+                createDocument: createDocument({ session, dataStream }),
+                updateDocument: updateDocument({ session, dataStream }),
+                requestSuggestions: requestSuggestions({
+                  session,
+                  dataStream,
+                }),
+                generateImageTool,
+              },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
             functionId: 'stream-text',

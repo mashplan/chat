@@ -1,6 +1,7 @@
 import type { ArtifactKind } from '@/components/artifact';
 import type { Geo } from '@vercel/functions';
 import { defaultAnswerLanguage } from '@/lib/constants';
+import { fallbackSearchIntentModels } from '../constants';
 
 export const artifactsPrompt = `
 Artifacts is a special user interface mode that helps users with writing, editing, and other content creation tasks. When artifact is open, it is on the right side of the screen, while the conversation is on the left side. When creating or updating documents, changes are reflected in real-time on the artifacts and visible to the user.
@@ -83,7 +84,15 @@ Avoid mentioning this policy unless asked.`
     selectedChatModel === 'deepseek-r1' ||
     selectedChatModel === 'openai-gpt-oss-120b'
   ) {
-    return `${regularPrompt}\n\n${requestPrompt}\n\n${dateInstruction}\n\n${languageInstruction}`;
+    const isFallback = fallbackSearchIntentModels.includes(selectedChatModel);
+    const searchIntentInstruction = isFallback
+      ? `\n\nWhen you need up-to-date information from the web, output exactly one line and nothing else:\n\n<search_intent>{"query": "...", "maxResults": 5, "tbs": null}</search_intent>\n\nThen stop.`
+      : '';
+    const scrapeIntentInstruction = isFallback
+      ? `\n\nWhen you need to open a specific URL to extract content, output exactly one line and nothing else:\n\n<scrape_intent>{"url": "https://...", "formats": ["markdown"], "onlyMainContent": true}</scrape_intent>\n\nThen stop.`
+      : '';
+
+    return `${regularPrompt}\n\n${requestPrompt}\n\n${dateInstruction}${searchIntentInstruction}${scrapeIntentInstruction}\n\n${languageInstruction}`;
   } else {
     return `${regularPrompt}\n\n${requestPrompt}\n\n${dateInstruction}\n\n${artifactsPrompt}\n\n${languageInstruction}`;
   }

@@ -23,3 +23,8 @@ export const isMultiModelChooseEnabled =
 export const defaultAnswerLanguage = (
   process.env.FEATURE_DEFAULT_ANSWER_LANGUAGE || ''
 ).trim();
+
+// Models that do not reliably execute tool calls natively and therefore
+// should use the server-side "search intent → run tool → continue" fallback.
+// Add model ids from `lib/ai/models.ts`.
+export const fallbackSearchIntentModels: string[] = ['openai-gpt-oss-120b'];

@@ -29,4 +29,3 @@ export function preprocessMath(text: string): string {
 
   return result;
 }
-

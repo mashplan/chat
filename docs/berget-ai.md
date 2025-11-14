@@ -15,26 +15,36 @@ Key files
 Models and capabilities (verified)
 
 - Tool‑calling supported on Berget:
+  - `openai/gpt-oss-120b` ✅ (server-side fallback: emits search/scrape intent, server executes tools)
   - `meta-llama/Llama-3.1-8B-Instruct`
   - `meta-llama/Llama-3.3-70B-Instruct`
   - `mistralai/Devstral-Small-2505`
   - `mistralai/Magistral-Small-2506`
+  - `unsloth/MAI-DS-R1-GGUF` (DeepSeek R1) ✅ (native tool calling with reasoning extraction)
+  - `Qwen/Qwen3-32B` ✅ (native tool calling with reasoning extraction)
 - Tool‑calling not available on these endpoints (Berget returns 400 if tools are sent):
-  - `openai/gpt-oss-120b`
-  - `unsloth/MAI-DS-R1-GGUF` (DeepSeek R1)
   - `mistralai/Mistral-Small-3.1-24B-Instruct-2503`
-  - `KBLab/kb-whisper-large`, `BAAI/bge-reranker-v2-m3`, `intfloat/multilingual-e5-large-instruct`, `Qwen/Qwen3-32B`
+  - `KBLab/kb-whisper-large`, `BAAI/bge-reranker-v2-m3`, `intfloat/multilingual-e5-large-instruct`
 
 How tools are sent
 
-- For supported models the provider sends both `tools + tool_choice=auto` and legacy `functions + function_call=auto`.
-- JSON Schemas are mapped for project tools:
+- **For most supported models:** Provider sends `tools + tool_choice=auto` in streamText call.
+- **For GPT-OSS 120B:** Uses server-side fallback (preflight intent detection), no tools sent to API.
+  - Preflight pass: Model emits `<search_intent>` or `<scrape_intent>` line
+  - Server parses intent, runs `searchWeb`/`scrapeUrl` directly (server-side)
+  - Results injected as system message in main stream
+  - Main stream: Tools disabled (`toolChoice: 'none'`) to avoid 400 errors
+  - See `docs/SOLUTION_REASONING_TOOLS.md` for details
+- **For unsupported models:** Provider omits tools entirely to avoid 400s.
+
+All supported tools have JSON schemas:
   - `searchWeb`, `getWeather`, `scrapeUrl`, `createDocument`, `updateDocument`, `requestSuggestions`, `generateImageTool`.
-- For unsupported models the provider omits tools entirely to avoid 400s.
 
 Reasoning UI
 
-- Some endpoints (e.g., GPT‑OSS, DeepSeek R1) embed reasoning inside the text using `<think>…</think>` tags. The `extractReasoningMiddleware` extracts these and emits AI SDK reasoning parts so the UI shows a proper "thinking" block.
+- Some endpoints (e.g., GPT‑OSS, DeepSeek R1, Qwen3 32B) embed reasoning inside the text using `<think>…</think>` tags. The `extractReasoningMiddleware` extracts these and emits AI SDK reasoning parts so the UI shows a proper "thinking" block.
+- **For GPT-OSS 120B:** Reasoning extraction works alongside server-side tool fallback (both features enabled).
+- **For DeepSeek R1 & Qwen3 32B:** Reasoning extraction works alongside native tool calling (both features enabled).
 
 Streaming
 
@@ -44,8 +54,12 @@ Streaming
 Model routing and current behavior
 
 - **All models** use the OpenAI‑compatible provider and stream text/reasoning normally
-- Models with reasoning capabilities (GPT‑OSS, DeepSeek R1, Qwen3 32B): wrapped with `extractReasoningMiddleware({ tagName: 'think' })` to extract `<think>` tags
-- Models without reasoning (Llama 3.3 70B, Magistral Small 2506): use the provider directly
+- **All models** (including reasoning models) now support tool calling with AI SDK 6 Beta
+- **Models with reasoning capabilities:**
+  - GPT‑OSS 120B: wrapped with `extractReasoningMiddleware({ tagName: 'think' })` + server-side tool fallback
+  - DeepSeek R1: wrapped with `extractReasoningMiddleware({ tagName: 'think' })` + native tool calling
+  - Qwen3 32B: wrapped with `extractReasoningMiddleware({ tagName: 'think' })` + native tool calling
+- **Models without reasoning** (Llama 3.3 70B, Magistral Small 2506): use the provider directly with native tool support
 
 Debugging & scripts
 
@@ -62,8 +76,12 @@ DEBUG=true
 
 Notes & limitations
 
-- Tool behavior depends on the specific Berget endpoint for a model; GPT‑OSS currently rejects tools on Berget even though the base model may support tools elsewhere.
+- Tool behavior depends on the specific Berget endpoint for a model:
+  - GPT‑OSS 120B endpoint rejects native tool calls (returns 400), so we use server-side fallback
+  - DeepSeek R1 and Qwen3 32B endpoints accept native tool calls
+  - Other models vary by endpoint capability
 - Tool schemas are defined inline in `lib/ai/tools/` and automatically registered with the AI SDK.
+- See `docs/SOLUTION_REASONING_TOOLS.md` for detailed explanation of the fallback flow for GPT-OSS 120B.
 
 ### Add another Berget model
 
@@ -75,15 +93,27 @@ Follow these steps to add a new chat model backed by Berget AI. This ensures the
 - Add a new entry under `languageModels` using the `bergetAiProvider` (OpenAI‑compatible provider).
 - If the model supports reasoning via `<think>` tags, wrap it with `extractReasoningMiddleware`.
   
-  Example (Qwen3 32B with reasoning):
+  Example (Qwen3 32B with reasoning + native tool calling):
   ```ts
   'qwen3-32b': withDebug(
     wrapLanguageModel({
       model: bergetAiProvider('Qwen/Qwen3-32B'),
-      middleware: extractReasoningMiddleware({ tagName: 'think' }),
+      middleware: extractReasoningMiddleware({ tagName: 'think' }), // Extracts reasoning + allows native tool calls
     }),
     'berget-ai:Qwen/Qwen3-32B',
   ),
+  ```
+  
+  Example (GPT-OSS 120B with reasoning + server-side tool fallback):
+  ```ts
+  'openai-gpt-oss-120b': withDebug(
+    wrapLanguageModel({
+      model: bergetAiProvider('openai/gpt-oss-120b'),
+      middleware: extractReasoningMiddleware({ tagName: 'think' }), // Extracts reasoning, tools handled server-side
+    }),
+    'berget-ai:openai/gpt-oss-120b',
+  ),
+  // Also add to fallbackSearchIntentModels in lib/constants.ts
   ```
   
   Example (Llama 3.3 70B without reasoning):
