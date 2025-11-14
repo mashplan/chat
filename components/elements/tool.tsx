@@ -13,10 +13,12 @@ import {
   ChevronDownIcon,
   CircleIcon,
   ClockIcon,
+  Loader2Icon,
   WrenchIcon,
   XCircleIcon,
 } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
+import React from 'react';
 import { CodeBlock } from './code-block';
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
@@ -35,19 +37,27 @@ export type ToolHeaderProps = {
 };
 
 const getStatusBadge = (status: ToolUIPart['state']) => {
-  const labels = {
+  const labels: Record<ToolUIPart['state'], string> = {
     'input-streaming': 'Pending',
     'input-available': 'Running',
+    'approval-requested': 'Approval Requested',
+    'approval-responded': 'Approval Responded',
     'output-available': 'Completed',
     'output-error': 'Error',
-  } as const;
+    'output-denied': 'Denied',
+  };
 
-  const icons = {
+  const icons: Record<ToolUIPart['state'], React.ReactNode> = {
     'input-streaming': <CircleIcon className="size-4" />,
-    'input-available': <ClockIcon className="size-4 animate-pulse" />,
+    'input-available': (
+      <Loader2Icon className="size-4 animate-spin text-primary" />
+    ),
+    'approval-requested': <ClockIcon className="size-4 animate-pulse" />,
+    'approval-responded': <CircleIcon className="size-4" />,
     'output-available': <CheckCircleIcon className="size-4 text-green-600" />,
     'output-error': <XCircleIcon className="size-4 text-red-600" />,
-  } as const;
+    'output-denied': <XCircleIcon className="size-4 text-orange-600" />,
+  };
 
   return (
     <Badge

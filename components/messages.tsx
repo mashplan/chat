@@ -70,28 +70,39 @@ function PureMessages({
         <ConversationContent className="flex flex-col gap-4 px-2 py-4 md:gap-6 md:px-4">
           {messages.length === 0 && <Greeting />}
 
-          {messages.map((message, index) => (
-            <PreviewMessage
-              key={message.id}
-              chatId={chatId}
-              message={message}
-              isLoading={
-                status === 'streaming' && messages.length - 1 === index
-              }
-              vote={
-                votes
-                  ? votes.find((vote) => vote.messageId === message.id)
-                  : undefined
-              }
-              setMessages={setMessages}
-              regenerate={regenerate}
-              isReadonly={isReadonly}
-              requiresScrollPadding={
-                hasSentMessage && index === messages.length - 1
-              }
-              isArtifactVisible={isArtifactVisible}
-            />
-          ))}
+          {messages.map((message, index) => {
+            const isLastMessage = index === messages.length - 1;
+            const isAssistantMessage = message.role === 'assistant';
+            // Show loader if streaming and this is the last assistant message
+            // OR if submitted/streaming and this is the last message (assistant) waiting for response
+            const isLoading =
+              (status === 'streaming' && isLastMessage && isAssistantMessage) ||
+              ((status === 'submitted' || status === 'streaming') &&
+                isLastMessage &&
+                isAssistantMessage &&
+                (message.parts?.length ?? 0) === 0);
+            
+            return (
+              <PreviewMessage
+                key={message.id}
+                chatId={chatId}
+                message={message}
+                isLoading={isLoading}
+                vote={
+                  votes
+                    ? votes.find((vote) => vote.messageId === message.id)
+                    : undefined
+                }
+                setMessages={setMessages}
+                regenerate={regenerate}
+                isReadonly={isReadonly}
+                requiresScrollPadding={
+                  hasSentMessage && index === messages.length - 1
+                }
+                isArtifactVisible={isArtifactVisible}
+              />
+            );
+          })}
 
           {status === 'submitted' &&
             messages.length > 0 &&

@@ -44,26 +44,37 @@ function PureArtifactMessages({
       ref={messagesContainerRef}
       className="flex h-full flex-col items-center gap-4 overflow-y-scroll px-4 pt-20"
     >
-      {messages.map((message, index) => (
-        <PreviewMessage
-          chatId={chatId}
-          key={message.id}
-          message={message}
-          isLoading={status === 'streaming' && index === messages.length - 1}
-          vote={
-            votes
-              ? votes.find((vote) => vote.messageId === message.id)
-              : undefined
-          }
-          setMessages={setMessages}
-          regenerate={regenerate}
-          isReadonly={isReadonly}
-          requiresScrollPadding={
-            hasSentMessage && index === messages.length - 1
-          }
-          isArtifactVisible={true}
-        />
-      ))}
+      {messages.map((message, index) => {
+        const isLastMessage = index === messages.length - 1;
+        const isAssistantMessage = message.role === 'assistant';
+        const isLoading =
+          (status === 'streaming' && isLastMessage && isAssistantMessage) ||
+          ((status === 'submitted' || status === 'streaming') &&
+            isLastMessage &&
+            isAssistantMessage &&
+            (message.parts?.length ?? 0) === 0);
+
+        return (
+          <PreviewMessage
+            chatId={chatId}
+            key={message.id}
+            message={message}
+            isLoading={isLoading}
+            vote={
+              votes
+                ? votes.find((vote) => vote.messageId === message.id)
+                : undefined
+            }
+            setMessages={setMessages}
+            regenerate={regenerate}
+            isReadonly={isReadonly}
+            requiresScrollPadding={
+              hasSentMessage && index === messages.length - 1
+            }
+            isArtifactVisible={true}
+          />
+        );
+      })}
 
       {status === 'submitted' &&
         messages.length > 0 &&
