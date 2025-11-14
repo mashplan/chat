@@ -231,3 +231,25 @@ The fallback flow is the correct solution for GPT-OSS 120B's endpoint limitation
 
 The solution preserves reasoning extraction while enabling tools through different flows based on endpoint capabilities.
 
+## AI SDK Beta 6 Compatibility
+
+**Question:** Is the manual fallback still necessary with AI SDK Beta 6?
+
+**Answer:** ✅ **NO LONGER NEEDED!** (Updated January 2025)
+
+- ✅ **AI SDK Beta 6 fully supports native tool calling** with reasoning models
+- ✅ **DeepSeek R1 & Qwen3 32B** use native tool calling successfully
+- ✅ **GPT-OSS 120B** now supports native tool calling! (Berget AI fixed their endpoint)
+
+**Verification:**
+- Test script: `scripts/test-gpt-oss-tool-calling.mjs`
+- Results: HTTP 200 with tool_calls ✅
+- Manual fallback has been removed from the codebase
+
+**What changed:**
+- Berget AI enabled native tool calling for GPT-OSS 120B endpoint
+- GPT-OSS 120B removed from `fallbackSearchIntentModels` list
+- All reasoning models now use native tool calling consistently
+
+**Support Ticket:** ✅ RESOLVED - See `docs/support-tickets/berget-oss-tool-calling-ticket.md` for details.
+

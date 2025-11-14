@@ -243,6 +243,16 @@ export async function POST(request: Request) {
 
     let finalUsage: LanguageModelUsage | undefined;
 
+    // Store tool parts outside execute scope so they're accessible in onFinish
+    const toolParts: Array<{
+      type: string;
+      toolCallId: string;
+      state: string;
+      input?: any;
+      output?: any;
+      errorText?: string;
+    }> = [];
+
     const stream = createUIMessageStream({
       execute: async ({ writer: dataStream }) => {
         const effectiveModelId = isMultiModelChooseEnabled
@@ -279,6 +289,7 @@ export async function POST(request: Request) {
 
         // Optional preflight: ask the model for search intent for fallback models
         let messagesForStream = uiMessages;
+
         if (isSearchFallbackModel) {
           try {
             const pre = await generateText({
@@ -291,6 +302,25 @@ export async function POST(request: Request) {
               stopWhen: stepCountIs(5),
             });
 
+            // Extract and stream reasoning from preflight call if present
+            // The reasoning middleware extracts <think> tags, check the raw text
+            const reasoningMatch = pre.text?.match(/<think>([\s\S]*?)<\/think>/i);
+            if (reasoningMatch && reasoningMatch[1]?.trim().length > 0) {
+              const reasoningId = generateUUID();
+              const reasoningText = reasoningMatch[1].trim();
+              // Write reasoning start
+              dataStream.write({
+                type: 'reasoning-start',
+                id: reasoningId,
+              });
+              // Write reasoning content as delta
+              dataStream.write({
+                type: 'reasoning-delta',
+                id: reasoningId,
+                delta: reasoningText,
+              });
+            }
+
             const intent = extractSearchIntent(pre.text || '');
             const scrapeIntent = extractScrapeIntent(pre.text || '');
 
@@ -299,38 +329,99 @@ export async function POST(request: Request) {
                 '[chat/route] Detected search intent. Running searchWeb fallback with:',
                 intent,
               );
-              const searchOutput: any = await (searchWeb as any).execute(
-                {
-                  query: intent.query,
-                  maxResults: intent.maxResults ?? 5,
-                  tbs: intent.tbs ?? undefined,
-                  sources: ['web'],
-                  categories: [],
-                  location: undefined,
-                },
-                {},
-              );
 
-              const contextText = formatSearchResultsForContext({
+              const toolCallId = generateUUID();
+              const toolInput = {
                 query: intent.query,
-                results: (searchOutput?.results as any[]) ?? [],
-              });
-
-              const contextMessage: ChatMessage = {
-                id: generateUUID(),
-                role: 'system',
-                parts: [
-                  {
-                    type: 'text',
-                    text: contextText,
-                  },
-                ] as any,
-                metadata: {
-                  createdAt: new Date().toISOString(),
-                },
+                maxResults: intent.maxResults ?? 5,
+                tbs: intent.tbs ?? undefined,
+                sources: ['web'] as const,
+                categories: [] as const,
+                location: undefined,
               };
 
-              messagesForStream = [...uiMessages, contextMessage];
+              // Add tool call part with input-available state
+              toolParts.push({
+                type: 'tool-searchWeb',
+                toolCallId,
+                state: 'input-available',
+                input: toolInput,
+              });
+
+              // Write tool-call event to stream for real-time display
+              (dataStream as any).write({
+                type: 'tool-call',
+                toolCallId,
+                toolName: 'searchWeb',
+                input: toolInput,
+              });
+
+              let searchOutput: any;
+              try {
+                searchOutput = await (searchWeb as any).execute(
+                  toolInput,
+                  {},
+                );
+
+                // Update tool part with output-available state
+                toolParts[toolParts.length - 1] = {
+                  type: 'tool-searchWeb',
+                  toolCallId,
+                  state: 'output-available',
+                  input: toolInput,
+                  output: searchOutput,
+                };
+
+                // Write tool-result event to stream for real-time display
+                (dataStream as any).write({
+                  type: 'tool-result',
+                  toolCallId,
+                  toolName: 'searchWeb',
+                  input: toolInput,
+                  output: searchOutput,
+                });
+
+                const contextText = formatSearchResultsForContext({
+                  query: intent.query,
+                  results: (searchOutput?.results as any[]) ?? [],
+                });
+
+                const contextMessage: ChatMessage = {
+                  id: generateUUID(),
+                  role: 'system',
+                  parts: [
+                    {
+                      type: 'text',
+                      text: contextText,
+                    },
+                  ] as any,
+                  metadata: {
+                    createdAt: new Date().toISOString(),
+                  },
+                };
+
+                messagesForStream = [...uiMessages, contextMessage];
+              } catch (searchError) {
+                // Update tool part with output-error state
+                toolParts[toolParts.length - 1] = {
+                  type: 'tool-searchWeb',
+                  toolCallId,
+                  state: 'output-error',
+                  input: toolInput,
+                  errorText: searchError instanceof Error ? searchError.message : String(searchError),
+                };
+                
+                // Write tool error to stream for real-time display
+                (dataStream as any).write({
+                  type: 'tool-result',
+                  toolCallId,
+                  toolName: 'searchWeb',
+                  input: toolInput,
+                  error: searchError instanceof Error ? searchError.message : String(searchError),
+                });
+                
+                throw searchError;
+              }
             }
 
             if (scrapeIntent?.url) {
@@ -338,34 +429,94 @@ export async function POST(request: Request) {
                 '[chat/route] Detected scrape intent. Running scrapeUrl fallback with:',
                 scrapeIntent,
               );
-              const scrapeOutput: any = await (scrapeUrl as any).execute(
-                {
-                  url: scrapeIntent.url,
-                  formats: scrapeIntent.formats ?? ['markdown'],
-                  onlyMainContent:
-                    typeof scrapeIntent.onlyMainContent === 'boolean'
-                      ? scrapeIntent.onlyMainContent
-                      : true,
-                },
-                {},
-              );
 
-              const scrapedMarkdown =
-                (scrapeOutput?.content as string) ||
-                (scrapeOutput?.markdown as string) ||
-                '';
-              if (scrapedMarkdown) {
-                const scrapeContext = formatScrapedContentForContext({
-                  url: scrapeIntent.url,
-                  content: scrapedMarkdown,
-                });
-                const scrapeMsg: ChatMessage = {
-                  id: generateUUID(),
-                  role: 'system',
-                  parts: [{ type: 'text', text: scrapeContext } as any],
-                  metadata: { createdAt: new Date().toISOString() },
+              const toolCallId = generateUUID();
+              const toolInput = {
+                url: scrapeIntent.url,
+                formats: scrapeIntent.formats ?? ['markdown'],
+                onlyMainContent:
+                  typeof scrapeIntent.onlyMainContent === 'boolean'
+                    ? scrapeIntent.onlyMainContent
+                    : true,
+              };
+
+              // Add tool call part with input-available state
+              toolParts.push({
+                type: 'tool-scrapeUrl',
+                toolCallId,
+                state: 'input-available',
+                input: toolInput,
+              });
+
+              // Write tool-call event to stream for real-time display
+              (dataStream as any).write({
+                type: 'tool-call',
+                toolCallId,
+                toolName: 'scrapeUrl',
+                input: toolInput,
+              });
+
+              try {
+                const scrapeOutput: any = await (scrapeUrl as any).execute(
+                  toolInput,
+                  {},
+                );
+
+                const scrapedMarkdown =
+                  (scrapeOutput?.content as string) ||
+                  (scrapeOutput?.markdown as string) ||
+                  '';
+                if (scrapedMarkdown) {
+                  // Update tool part with output-available state
+                  toolParts[toolParts.length - 1] = {
+                    type: 'tool-scrapeUrl',
+                    toolCallId,
+                    state: 'output-available',
+                    input: toolInput,
+                    output: scrapeOutput,
+                  };
+
+                  // Write tool-result event to stream for real-time display
+                  (dataStream as any).write({
+                    type: 'tool-result',
+                    toolCallId,
+                    toolName: 'scrapeUrl',
+                    input: toolInput,
+                    output: scrapeOutput,
+                  });
+
+                  const scrapeContext = formatScrapedContentForContext({
+                    url: scrapeIntent.url,
+                    content: scrapedMarkdown,
+                  });
+                  const scrapeMsg: ChatMessage = {
+                    id: generateUUID(),
+                    role: 'system',
+                    parts: [{ type: 'text', text: scrapeContext } as any],
+                    metadata: { createdAt: new Date().toISOString() },
+                  };
+                  messagesForStream = [...messagesForStream, scrapeMsg];
+                }
+              } catch (scrapeError) {
+                // Update tool part with output-error state
+                toolParts[toolParts.length - 1] = {
+                  type: 'tool-scrapeUrl',
+                  toolCallId,
+                  state: 'output-error',
+                  input: toolInput,
+                  errorText: scrapeError instanceof Error ? scrapeError.message : String(scrapeError),
                 };
-                messagesForStream = [...messagesForStream, scrapeMsg];
+                
+                // Write tool error to stream for real-time display
+                (dataStream as any).write({
+                  type: 'tool-result',
+                  toolCallId,
+                  toolName: 'scrapeUrl',
+                  input: toolInput,
+                  error: scrapeError instanceof Error ? scrapeError.message : String(scrapeError),
+                });
+                
+                throw scrapeError;
               }
             }
           } catch (e) {
@@ -430,6 +581,9 @@ export async function POST(request: Request) {
 
         result.consumeStream();
 
+        // Merge the main response stream
+        // Tool parts will be injected into the assistant message in onFinish
+        // This ensures they're persisted and will appear when the message is loaded
         dataStream.merge(
           result.toUIMessageStream({
             sendReasoning: true,
@@ -438,8 +592,19 @@ export async function POST(request: Request) {
       },
       generateId: generateUUID,
       onFinish: async ({ messages }) => {
+        // Inject tool parts into the assistant message if we have any
+        const messagesWithToolParts = messages.map((message) => {
+          if (message.role === 'assistant' && toolParts.length > 0) {
+            return {
+              ...message,
+              parts: [...toolParts, ...(message.parts || [])],
+            };
+          }
+          return message;
+        });
+
         await saveMessages({
-          messages: messages.map((message) => ({
+          messages: messagesWithToolParts.map((message) => ({
             id: message.id,
             role: message.role,
             parts: message.parts,

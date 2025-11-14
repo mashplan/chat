@@ -27,4 +27,5 @@ export const defaultAnswerLanguage = (
 // Models that do not reliably execute tool calls natively and therefore
 // should use the server-side "search intent → run tool → continue" fallback.
 // Add model ids from `lib/ai/models.ts`.
-export const fallbackSearchIntentModels: string[] = ['openai-gpt-oss-120b'];
+// NOTE: GPT-OSS 120B now supports native tool calling (verified Jan 2025)
+export const fallbackSearchIntentModels: string[] = [];

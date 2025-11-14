@@ -21,7 +21,8 @@
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test",
     "test:berget:tools": "node scripts/test-berget-tools.mjs",
     "scan:berget:tools": "node -r dotenv/config scripts/scan-berget-tools.mjs",
-    "test:berget:streaming": "node -r dotenv/config scripts/test-gpt-oss-streaming.mjs"
+    "test:berget:streaming": "node -r dotenv/config scripts/test-gpt-oss-streaming.mjs",
+    "test:gpt-oss:tools": "node scripts/test-gpt-oss-tool-calling.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "2.0.0",

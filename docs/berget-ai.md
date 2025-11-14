@@ -15,7 +15,7 @@ Key files
 Models and capabilities (verified)
 
 - Tool‑calling supported on Berget:
-  - `openai/gpt-oss-120b` ✅ (server-side fallback: emits search/scrape intent, server executes tools)
+  - `openai/gpt-oss-120b` ✅ (native tool calling with reasoning extraction - fixed Jan 2025)
   - `meta-llama/Llama-3.1-8B-Instruct`
   - `meta-llama/Llama-3.3-70B-Instruct`
   - `mistralai/Devstral-Small-2505`
@@ -28,13 +28,7 @@ Models and capabilities (verified)
 
 How tools are sent
 
-- **For most supported models:** Provider sends `tools + tool_choice=auto` in streamText call.
-- **For GPT-OSS 120B:** Uses server-side fallback (preflight intent detection), no tools sent to API.
-  - Preflight pass: Model emits `<search_intent>` or `<scrape_intent>` line
-  - Server parses intent, runs `searchWeb`/`scrapeUrl` directly (server-side)
-  - Results injected as system message in main stream
-  - Main stream: Tools disabled (`toolChoice: 'none'`) to avoid 400 errors
-  - See `docs/SOLUTION_REASONING_TOOLS.md` for details
+- **For all supported models:** Provider sends `tools + tool_choice=auto` in streamText call.
 - **For unsupported models:** Provider omits tools entirely to avoid 400s.
 
 All supported tools have JSON schemas:
@@ -77,8 +71,10 @@ DEBUG=true
 Notes & limitations
 
 - Tool behavior depends on the specific Berget endpoint for a model:
-  - GPT‑OSS 120B endpoint rejects native tool calls (returns 400), so we use server-side fallback
-  - DeepSeek R1 and Qwen3 32B endpoints accept native tool calls
+  - GPT‑OSS 120B endpoint now supports native tool calls ✅ (fixed Jan 2025)
+    - **Support ticket:** `docs/support-tickets/berget-oss-tool-calling-ticket.md`
+    - **Status:** ✅ RESOLVED - Native tool calling enabled
+  - DeepSeek R1, Qwen3 32B, and GPT-OSS 120B all support native tool calls
   - Other models vary by endpoint capability
 - Tool schemas are defined inline in `lib/ai/tools/` and automatically registered with the AI SDK.
 - See `docs/SOLUTION_REASONING_TOOLS.md` for detailed explanation of the fallback flow for GPT-OSS 120B.
