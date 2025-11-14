@@ -81,7 +81,7 @@ function PureMessages({
                 isLastMessage &&
                 isAssistantMessage &&
                 (message.parts?.length ?? 0) === 0);
-            
+
             return (
               <PreviewMessage
                 key={message.id}

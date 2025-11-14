@@ -128,370 +128,435 @@ const PurePreviewMessage = ({
               </MessageContent>
             )}
 
-          {message.parts?.map((part, index) => {
-            const { type } = part;
-            const key = `message-${message.id}-part-${index}`;
+          {(() => {
+            // Find the first non-reasoning part
+            const firstNonReasoningIndex =
+              message.parts?.findIndex(
+                (part) =>
+                  part.type !== 'reasoning' ||
+                  !part.text?.trim() ||
+                  part.text.trim().length === 0,
+              ) ?? -1;
 
-            if (type === 'reasoning' && part.text?.trim().length > 0) {
-              return (
-                <MessageReasoning
-                  key={key}
-                  isLoading={isLoading}
-                  reasoning={part.text}
-                />
-              );
+            // Collect reasoning parts that come before the first non-reasoning part
+            const leadingReasoningParts: typeof message.parts = [];
+            const renderedReasoningIndices = new Set<number>();
+
+            if (firstNonReasoningIndex > 0) {
+              message.parts?.forEach((part, index) => {
+                if (
+                  index < firstNonReasoningIndex &&
+                  part.type === 'reasoning' &&
+                  part.text?.trim().length > 0
+                ) {
+                  leadingReasoningParts.push(part);
+                  renderedReasoningIndices.add(index);
+                }
+              });
             }
 
-            if (type === 'text') {
-              if (mode === 'view') {
-                return (
-                  <div key={key}>
-                    <MessageContent
-                      data-testid="message-content"
-                      className={cn({
-                        'w-fit break-words rounded-2xl px-3 py-2 text-right text-white':
-                          message.role === 'user',
-                        'bg-transparent px-0 py-0 text-left':
-                          message.role === 'assistant',
-                      })}
-                      style={
-                        message.role === 'user'
-                          ? { backgroundColor: '#006cff' }
-                          : undefined
-                      }
-                    >
-                      <Response>{sanitizeText(part.text)}</Response>
-                    </MessageContent>
-                  </div>
-                );
-              }
+            // Render leading reasoning parts first, then all parts in order
+            // (skipping reasoning parts already rendered at the top)
+            return (
+              <>
+                {leadingReasoningParts.map((part, index) => {
+                  const key = `message-${message.id}-reasoning-${index}`;
+                  return (
+                    <MessageReasoning
+                      key={key}
+                      isLoading={isLoading}
+                      reasoning={part.text}
+                    />
+                  );
+                })}
+                {message.parts?.map((part, index) => {
+                  // Skip reasoning parts that were already rendered at the top
+                  if (renderedReasoningIndices.has(index)) {
+                    return null;
+                  }
 
-              if (mode === 'edit') {
-                return (
-                  <div
-                    key={key}
-                    className="flex w-full flex-row items-start gap-3"
-                  >
-                    <div className="size-8" />
-                    <div className="min-w-0 flex-1">
-                      <MessageEditor
-                        key={message.id}
-                        message={message}
-                        setMode={setMode}
-                        setMessages={setMessages}
-                        regenerate={regenerate}
+                  const { type } = part;
+                  const key = `message-${message.id}-part-${index}`;
+
+                  if (type === 'reasoning' && part.text?.trim().length > 0) {
+                    return (
+                      <MessageReasoning
+                        key={key}
+                        isLoading={isLoading}
+                        reasoning={part.text}
                       />
-                    </div>
-                  </div>
-                );
-              }
-            }
+                    );
+                  }
 
-            if (type === 'tool-getWeather') {
-              const { toolCallId, state } = part;
+                  if (type === 'text') {
+                    if (mode === 'view') {
+                      return (
+                        <div key={key}>
+                          <MessageContent
+                            data-testid="message-content"
+                            className={cn({
+                              'w-fit break-words rounded-2xl px-3 py-2 text-right text-white':
+                                message.role === 'user',
+                              'bg-transparent px-0 py-0 text-left':
+                                message.role === 'assistant',
+                            })}
+                            style={
+                              message.role === 'user'
+                                ? { backgroundColor: '#006cff' }
+                                : undefined
+                            }
+                          >
+                            <Response>{sanitizeText(part.text)}</Response>
+                          </MessageContent>
+                        </div>
+                      );
+                    }
 
-              return (
-                <Tool key={toolCallId} defaultOpen={true}>
-                  <ToolHeader type="tool-getWeather" state={state} />
-                  <ToolContent>
-                    {state === 'input-available' && (
-                      <ToolInput input={part.input} />
-                    )}
-                    {state === 'output-available' && (
-                      <ToolOutput
-                        output={<Weather weatherAtLocation={part.output} />}
-                        errorText={undefined}
-                      />
-                    )}
-                  </ToolContent>
-                </Tool>
-              );
-            }
-
-            if (type === 'tool-createDocument') {
-              const { toolCallId } = part;
-
-              if (part.output && 'error' in part.output) {
-                return (
-                  <div
-                    key={toolCallId}
-                    className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
-                  >
-                    Error creating document: {String(part.output.error)}
-                  </div>
-                );
-              }
-
-              return (
-                <DocumentPreview
-                  key={toolCallId}
-                  isReadonly={isReadonly}
-                  result={part.output}
-                />
-              );
-            }
-
-            if (type === 'tool-updateDocument') {
-              const { toolCallId } = part;
-
-              if (part.output && 'error' in part.output) {
-                return (
-                  <div
-                    key={toolCallId}
-                    className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
-                  >
-                    Error updating document: {String(part.output.error)}
-                  </div>
-                );
-              }
-
-              return (
-                <div key={toolCallId} className="relative">
-                  <DocumentPreview
-                    isReadonly={isReadonly}
-                    result={part.output}
-                    args={{ ...part.output, isUpdate: true }}
-                  />
-                </div>
-              );
-            }
-
-            if (type === 'tool-requestSuggestions') {
-              const { toolCallId, state } = part;
-
-              return (
-                <Tool key={toolCallId} defaultOpen={true}>
-                  <ToolHeader type="tool-requestSuggestions" state={state} />
-                  <ToolContent>
-                    {state === 'input-available' && (
-                      <ToolInput input={part.input} />
-                    )}
-                    {state === 'output-available' && (
-                      <ToolOutput
-                        output={
-                          'error' in part.output ? (
-                            <div className="rounded border p-2 text-red-500">
-                              Error: {String(part.output.error)}
-                            </div>
-                          ) : (
-                            <DocumentToolResult
-                              type="request-suggestions"
-                              result={part.output}
-                              isReadonly={isReadonly}
+                    if (mode === 'edit') {
+                      return (
+                        <div
+                          key={key}
+                          className="flex w-full flex-row items-start gap-3"
+                        >
+                          <div className="size-8" />
+                          <div className="min-w-0 flex-1">
+                            <MessageEditor
+                              key={message.id}
+                              message={message}
+                              setMode={setMode}
+                              setMessages={setMessages}
+                              regenerate={regenerate}
                             />
-                          )
-                        }
-                        errorText={undefined}
-                      />
-                    )}
-                  </ToolContent>
-                </Tool>
-              );
-            }
-
-            if ((part as any).type === 'tool-searchWeb') {
-              const { toolCallId, state } = part as any;
-
-              return (
-                <Tool key={toolCallId} defaultOpen={true}>
-                  <ToolHeader state={state} type="tool-searchWeb" />
-                  <ToolContent>
-                    {state === 'input-available' && (
-                      <ToolInput input={(part as any).input} />
-                    )}
-                    {state === 'output-error' && (
-                      <ToolOutput
-                        output={
-                          <div className="space-y-2">
-                            <div className="text-muted-foreground text-xs">
-                              Raw error
-                            </div>
-                            <div className="rounded-md bg-muted/50 p-2 text-xs">
-                              <CodeBlock
-                                code={String((part as any).errorText || '')}
-                                language="text"
-                              />
-                            </div>
                           </div>
-                        }
-                        errorText={(part as any).errorText}
+                        </div>
+                      );
+                    }
+                  }
+
+                  if (type === 'tool-getWeather') {
+                    const { toolCallId, state } = part;
+
+                    return (
+                      <Tool key={toolCallId} defaultOpen={true}>
+                        <ToolHeader type="tool-getWeather" state={state} />
+                        <ToolContent>
+                          {state === 'input-available' && (
+                            <ToolInput input={part.input} />
+                          )}
+                          {state === 'output-available' && (
+                            <ToolOutput
+                              output={
+                                <Weather weatherAtLocation={part.output} />
+                              }
+                              errorText={undefined}
+                            />
+                          )}
+                        </ToolContent>
+                      </Tool>
+                    );
+                  }
+
+                  if (type === 'tool-createDocument') {
+                    const { toolCallId } = part;
+
+                    if (part.output && 'error' in part.output) {
+                      return (
+                        <div
+                          key={toolCallId}
+                          className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
+                        >
+                          Error creating document: {String(part.output.error)}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <DocumentPreview
+                        key={toolCallId}
+                        isReadonly={isReadonly}
+                        result={part.output}
                       />
-                    )}
-                    {state === 'output-available' && (
-                      <ToolOutput
-                        output={
-                          <div className="space-y-3">
-                            {(part as any).output?.summary && (
-                              <div className="rounded-md bg-muted/50 p-2 text-xs">
-                                <div className="font-medium">Summary</div>
-                                <div>{(part as any).output.summary}</div>
-                              </div>
-                            )}
-                            <div className="text-muted-foreground text-xs">
-                              Query:{' '}
-                              <span className="font-medium">
-                                {(part as any).output?.query ??
-                                  (part as any).input?.query}
-                              </span>
-                              {typeof (part as any).output?.resultCount ===
-                                'number' && (
-                                <span>
-                                  {' '}
-                                  • Results: {(part as any).output.resultCount}
-                                </span>
-                              )}
-                            </div>
-                            {Array.isArray((part as any).output?.results) &&
-                              (part as any).output.results.length > 0 && (
+                    );
+                  }
+
+                  if (type === 'tool-updateDocument') {
+                    const { toolCallId } = part;
+
+                    if (part.output && 'error' in part.output) {
+                      return (
+                        <div
+                          key={toolCallId}
+                          className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
+                        >
+                          Error updating document: {String(part.output.error)}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={toolCallId} className="relative">
+                        <DocumentPreview
+                          isReadonly={isReadonly}
+                          result={part.output}
+                          args={{ ...part.output, isUpdate: true }}
+                        />
+                      </div>
+                    );
+                  }
+
+                  if (type === 'tool-requestSuggestions') {
+                    const { toolCallId, state } = part;
+
+                    return (
+                      <Tool key={toolCallId} defaultOpen={true}>
+                        <ToolHeader
+                          type="tool-requestSuggestions"
+                          state={state}
+                        />
+                        <ToolContent>
+                          {state === 'input-available' && (
+                            <ToolInput input={part.input} />
+                          )}
+                          {state === 'output-available' && (
+                            <ToolOutput
+                              output={
+                                'error' in part.output ? (
+                                  <div className="rounded border p-2 text-red-500">
+                                    Error: {String(part.output.error)}
+                                  </div>
+                                ) : (
+                                  <DocumentToolResult
+                                    type="request-suggestions"
+                                    result={part.output}
+                                    isReadonly={isReadonly}
+                                  />
+                                )
+                              }
+                              errorText={undefined}
+                            />
+                          )}
+                        </ToolContent>
+                      </Tool>
+                    );
+                  }
+
+                  if ((part as any).type === 'tool-searchWeb') {
+                    const { toolCallId, state } = part as any;
+
+                    return (
+                      <Tool key={toolCallId} defaultOpen={true}>
+                        <ToolHeader state={state} type="tool-searchWeb" />
+                        <ToolContent>
+                          {state === 'input-available' && (
+                            <ToolInput input={(part as any).input} />
+                          )}
+                          {state === 'output-error' && (
+                            <ToolOutput
+                              output={
                                 <div className="space-y-2">
-                                  {(part as any).output.results.map(
-                                    (r: any, i: number) => (
-                                      <div
-                                        key={r.url ?? i}
-                                        className="rounded-md border bg-background p-2"
-                                      >
-                                        <div className="truncate font-medium text-xs">
-                                          <a
-                                            href={r.url}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="underline"
-                                          >
-                                            {r.title || r.url}
-                                          </a>
-                                        </div>
-                                        {r.description && (
-                                          <div className="mt-1 line-clamp-3 text-muted-foreground text-xs">
-                                            {r.description}
-                                          </div>
-                                        )}
-                                      </div>
-                                    ),
-                                  )}
+                                  <div className="text-muted-foreground text-xs">
+                                    Raw error
+                                  </div>
+                                  <div className="rounded-md bg-muted/50 p-2 text-xs">
+                                    <CodeBlock
+                                      code={String(
+                                        (part as any).errorText || '',
+                                      )}
+                                      language="text"
+                                    />
+                                  </div>
                                 </div>
-                              )}
-                            {(part as any).output?.privacy_notice && (
-                              <div className="text-[10px] text-muted-foreground">
-                                {(part as any).output.privacy_notice}
-                              </div>
-                            )}
-                          </div>
-                        }
-                        errorText={(part as any).errorText}
-                      />
-                    )}
-                  </ToolContent>
-                </Tool>
-              );
-            }
-
-            if ((part as any).type === 'tool-scrapeUrl') {
-              const { toolCallId, state } = part as any;
-
-              return (
-                <Tool key={toolCallId} defaultOpen={true}>
-                  <ToolHeader state={state} type="tool-scrapeUrl" />
-                  <ToolContent>
-                    {state === 'input-available' && (
-                      <ToolInput input={(part as any).input} />
-                    )}
-                    {state === 'output-error' && (
-                      <ToolOutput
-                        output={
-                          <div className="space-y-2">
-                            <div className="text-muted-foreground text-xs">
-                              Raw error
-                            </div>
-                            <div className="rounded-md bg-muted/50 p-2 text-xs">
-                              <CodeBlock
-                                code={String((part as any).errorText || '')}
-                                language="text"
-                              />
-                            </div>
-                          </div>
-                        }
-                        errorText={(part as any).errorText}
-                      />
-                    )}
-                    {state === 'output-available' && (
-                      <ToolOutput
-                        output={
-                          <div className="space-y-3">
-                            <div className="text-muted-foreground text-xs">
-                              Scraped:{' '}
-                              <span className="font-medium">
-                                {(part as any).output?.url ||
-                                  (part as any).input?.url}
-                              </span>
-                            </div>
-                            {(part as any).output?.data?.metadata && (
-                              <div className="rounded-md border bg-background p-2 text-xs">
-                                <div className="font-medium">Metadata</div>
-                                <div className="mt-1 grid grid-cols-1 gap-1 sm:grid-cols-2">
-                                  <div>
-                                    Title:{' '}
-                                    {(part as any).output.data.metadata.title}
-                                  </div>
-                                  <div>
-                                    Language:{' '}
-                                    {(part as any).output.data.metadata
-                                      .language || 'n/a'}
-                                  </div>
-                                  <div>
-                                    Status:{' '}
-                                    {String(
-                                      (part as any).output.data.metadata
-                                        .statusCode ?? 'n/a',
+                              }
+                              errorText={(part as any).errorText}
+                            />
+                          )}
+                          {state === 'output-available' && (
+                            <ToolOutput
+                              output={
+                                <div className="space-y-3">
+                                  {(part as any).output?.summary && (
+                                    <div className="rounded-md bg-muted/50 p-2 text-xs">
+                                      <div className="font-medium">Summary</div>
+                                      <div>{(part as any).output.summary}</div>
+                                    </div>
+                                  )}
+                                  <div className="text-muted-foreground text-xs">
+                                    Query:{' '}
+                                    <span className="font-medium">
+                                      {(part as any).output?.query ??
+                                        (part as any).input?.query}
+                                    </span>
+                                    {typeof (part as any).output
+                                      ?.resultCount === 'number' && (
+                                      <span>
+                                        {' '}
+                                        • Results:{' '}
+                                        {(part as any).output.resultCount}
+                                      </span>
                                     )}
                                   </div>
-                                  <div>
-                                    Source:{' '}
-                                    {
-                                      (part as any).output.data.metadata
-                                        .sourceURL
-                                    }
+                                  {Array.isArray(
+                                    (part as any).output?.results,
+                                  ) &&
+                                    (part as any).output.results.length > 0 && (
+                                      <div className="space-y-2">
+                                        {(part as any).output.results.map(
+                                          (r: any, i: number) => (
+                                            <div
+                                              key={r.url ?? i}
+                                              className="rounded-md border bg-background p-2"
+                                            >
+                                              <div className="truncate font-medium text-xs">
+                                                <a
+                                                  href={r.url}
+                                                  target="_blank"
+                                                  rel="noreferrer"
+                                                  className="underline"
+                                                >
+                                                  {r.title || r.url}
+                                                </a>
+                                              </div>
+                                              {r.description && (
+                                                <div className="mt-1 line-clamp-3 text-muted-foreground text-xs">
+                                                  {r.description}
+                                                </div>
+                                              )}
+                                            </div>
+                                          ),
+                                        )}
+                                      </div>
+                                    )}
+                                  {(part as any).output?.privacy_notice && (
+                                    <div className="text-[10px] text-muted-foreground">
+                                      {(part as any).output.privacy_notice}
+                                    </div>
+                                  )}
+                                </div>
+                              }
+                              errorText={(part as any).errorText}
+                            />
+                          )}
+                        </ToolContent>
+                      </Tool>
+                    );
+                  }
+
+                  if ((part as any).type === 'tool-scrapeUrl') {
+                    const { toolCallId, state } = part as any;
+
+                    return (
+                      <Tool key={toolCallId} defaultOpen={true}>
+                        <ToolHeader state={state} type="tool-scrapeUrl" />
+                        <ToolContent>
+                          {state === 'input-available' && (
+                            <ToolInput input={(part as any).input} />
+                          )}
+                          {state === 'output-error' && (
+                            <ToolOutput
+                              output={
+                                <div className="space-y-2">
+                                  <div className="text-muted-foreground text-xs">
+                                    Raw error
+                                  </div>
+                                  <div className="rounded-md bg-muted/50 p-2 text-xs">
+                                    <CodeBlock
+                                      code={String(
+                                        (part as any).errorText || '',
+                                      )}
+                                      language="text"
+                                    />
                                   </div>
                                 </div>
-                              </div>
-                            )}
-                            {(part as any).output?.data?.markdown && (
-                              <div className="rounded-md bg-muted/50 p-2 text-xs">
-                                <div className="font-medium">
-                                  Markdown (preview)
-                                </div>
-                                <div className="mt-1 line-clamp-6 whitespace-pre-wrap">
-                                  {(part as any).output.data.markdown.slice(
-                                    0,
-                                    2000,
+                              }
+                              errorText={(part as any).errorText}
+                            />
+                          )}
+                          {state === 'output-available' && (
+                            <ToolOutput
+                              output={
+                                <div className="space-y-3">
+                                  <div className="text-muted-foreground text-xs">
+                                    Scraped:{' '}
+                                    <span className="font-medium">
+                                      {(part as any).output?.url ||
+                                        (part as any).input?.url}
+                                    </span>
+                                  </div>
+                                  {(part as any).output?.data?.metadata && (
+                                    <div className="rounded-md border bg-background p-2 text-xs">
+                                      <div className="font-medium">
+                                        Metadata
+                                      </div>
+                                      <div className="mt-1 grid grid-cols-1 gap-1 sm:grid-cols-2">
+                                        <div>
+                                          Title:{' '}
+                                          {
+                                            (part as any).output.data.metadata
+                                              .title
+                                          }
+                                        </div>
+                                        <div>
+                                          Language:{' '}
+                                          {(part as any).output.data.metadata
+                                            .language || 'n/a'}
+                                        </div>
+                                        <div>
+                                          Status:{' '}
+                                          {String(
+                                            (part as any).output.data.metadata
+                                              .statusCode ?? 'n/a',
+                                          )}
+                                        </div>
+                                        <div>
+                                          Source:{' '}
+                                          {
+                                            (part as any).output.data.metadata
+                                              .sourceURL
+                                          }
+                                        </div>
+                                      </div>
+                                    </div>
                                   )}
-                                </div>
-                              </div>
-                            )}
-                            <details className="rounded-md border p-2 text-xs">
-                              <summary className="cursor-pointer select-none font-medium">
-                                Raw JSON
-                              </summary>
-                              <div className="mt-2">
-                                <CodeBlock
-                                  code={JSON.stringify(
-                                    (part as any).output,
-                                    null,
-                                    2,
+                                  {(part as any).output?.data?.markdown && (
+                                    <div className="rounded-md bg-muted/50 p-2 text-xs">
+                                      <div className="font-medium">
+                                        Markdown (preview)
+                                      </div>
+                                      <div className="mt-1 line-clamp-6 whitespace-pre-wrap">
+                                        {(
+                                          part as any
+                                        ).output.data.markdown.slice(0, 2000)}
+                                      </div>
+                                    </div>
                                   )}
-                                  language="json"
-                                />
-                              </div>
-                            </details>
-                          </div>
-                        }
-                        errorText={(part as any).errorText}
-                      />
-                    )}
-                  </ToolContent>
-                </Tool>
-              );
-            }
-          })}
+                                  <details className="rounded-md border p-2 text-xs">
+                                    <summary className="cursor-pointer select-none font-medium">
+                                      Raw JSON
+                                    </summary>
+                                    <div className="mt-2">
+                                      <CodeBlock
+                                        code={JSON.stringify(
+                                          (part as any).output,
+                                          null,
+                                          2,
+                                        )}
+                                        language="json"
+                                      />
+                                    </div>
+                                  </details>
+                                </div>
+                              }
+                              errorText={(part as any).errorText}
+                            />
+                          )}
+                        </ToolContent>
+                      </Tool>
+                    );
+                  }
+                })}
+              </>
+            );
+          })()}
 
           {!isReadonly && (
             <MessageActions

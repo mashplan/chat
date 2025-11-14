@@ -304,7 +304,9 @@ export async function POST(request: Request) {
 
             // Extract and stream reasoning from preflight call if present
             // The reasoning middleware extracts <think> tags, check the raw text
-            const reasoningMatch = pre.text?.match(/<think>([\s\S]*?)<\/think>/i);
+            const reasoningMatch = pre.text?.match(
+              /<think>([\s\S]*?)<\/think>/i,
+            );
             if (reasoningMatch && reasoningMatch[1]?.trim().length > 0) {
               const reasoningId = generateUUID();
               const reasoningText = reasoningMatch[1].trim();
@@ -358,10 +360,7 @@ export async function POST(request: Request) {
 
               let searchOutput: any;
               try {
-                searchOutput = await (searchWeb as any).execute(
-                  toolInput,
-                  {},
-                );
+                searchOutput = await (searchWeb as any).execute(toolInput, {});
 
                 // Update tool part with output-available state
                 toolParts[toolParts.length - 1] = {
@@ -408,18 +407,24 @@ export async function POST(request: Request) {
                   toolCallId,
                   state: 'output-error',
                   input: toolInput,
-                  errorText: searchError instanceof Error ? searchError.message : String(searchError),
+                  errorText:
+                    searchError instanceof Error
+                      ? searchError.message
+                      : String(searchError),
                 };
-                
+
                 // Write tool error to stream for real-time display
                 (dataStream as any).write({
                   type: 'tool-result',
                   toolCallId,
                   toolName: 'searchWeb',
                   input: toolInput,
-                  error: searchError instanceof Error ? searchError.message : String(searchError),
+                  error:
+                    searchError instanceof Error
+                      ? searchError.message
+                      : String(searchError),
                 });
-                
+
                 throw searchError;
               }
             }
@@ -504,18 +509,24 @@ export async function POST(request: Request) {
                   toolCallId,
                   state: 'output-error',
                   input: toolInput,
-                  errorText: scrapeError instanceof Error ? scrapeError.message : String(scrapeError),
+                  errorText:
+                    scrapeError instanceof Error
+                      ? scrapeError.message
+                      : String(scrapeError),
                 };
-                
+
                 // Write tool error to stream for real-time display
                 (dataStream as any).write({
                   type: 'tool-result',
                   toolCallId,
                   toolName: 'scrapeUrl',
                   input: toolInput,
-                  error: scrapeError instanceof Error ? scrapeError.message : String(scrapeError),
+                  error:
+                    scrapeError instanceof Error
+                      ? scrapeError.message
+                      : String(scrapeError),
                 });
-                
+
                 throw scrapeError;
               }
             }
