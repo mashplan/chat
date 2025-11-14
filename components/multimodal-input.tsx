@@ -105,17 +105,17 @@ function PureMultimodalInput({
     }
   }, []);
 
-  const adjustHeight = () => {
+  const adjustHeight = useCallback(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = '44px';
     }
-  };
+  }, []);
 
-  const resetHeight = () => {
+  const resetHeight = useCallback(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = '44px';
     }
-  };
+  }, []);
 
   const [localStorageInput, setLocalStorageInput] = useLocalStorage(
     'input',
@@ -182,11 +182,12 @@ function PureMultimodalInput({
     sendMessage,
     setAttachments,
     setLocalStorageInput,
+    resetHeight,
     width,
     chatId,
   ]);
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = useCallback(async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -211,7 +212,7 @@ function PureMultimodalInput({
     } catch (error) {
       toast.error('Failed to upload file, please try again!');
     }
-  };
+  }, []);
 
   const modelResolver = useMemo(() => {
     return myProvider.languageModel(selectedModelId);
@@ -265,7 +266,7 @@ function PureMultimodalInput({
         setUploadQueue([]);
       }
     },
-    [setAttachments],
+    [uploadFile, setAttachments],
   );
 
   const { isAtBottom, scrollToBottom } = useScrollToBottom();

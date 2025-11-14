@@ -145,7 +145,7 @@ export const searchWeb = tool({
     }
 
     console.log('[searchWeb] FIRECRAWL_API_KEY found, proceeding with search');
-    
+
     // Build options conservatively and avoid sending undefined fields
     const baseOptions: any = {
       limit: maxResults ?? 5,

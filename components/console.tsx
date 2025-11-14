@@ -69,7 +69,8 @@ export function Console({ consoleOutputs, setConsoleOutputs }: ConsoleProps) {
 
   useEffect(() => {
     consoleEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [consoleOutputs]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [consoleOutputs.length]);
 
   useEffect(() => {
     if (!isArtifactVisible) {
