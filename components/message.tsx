@@ -94,6 +94,7 @@ const PurePreviewMessage = ({
   isArtifactVisible: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
+  const t = useTranslations('Tool');
 
   const attachmentsFromMessage = message.parts.filter(
     (part) => part.type === 'file',
@@ -451,7 +452,6 @@ const PurePreviewMessage = ({
                     const output = searchPart.output as
                       | SearchWebOutput
                       | undefined;
-                    const t = useTranslations('Tool');
                     return (
                       <Tool key={toolCallId} defaultOpen={true}>
                         <ToolHeader state={state} type="tool-searchWeb" />
@@ -552,7 +552,6 @@ const PurePreviewMessage = ({
                     const output = scrapePart.output as
                       | ScrapeUrlOutput
                       | undefined;
-                    const t = useTranslations('Tool');
                     return (
                       <Tool key={toolCallId} defaultOpen={true}>
                         <ToolHeader state={state} type="tool-scrapeUrl" />

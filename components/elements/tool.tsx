@@ -92,41 +92,44 @@ const ToolIcon = ({ type }: { type: ToolUIPart['type'] }) => {
   }
 };
 
-const getToolTitle = (type: ToolUIPart['type']) => {
-  const t = useTranslations('Tool');
-  switch (type) {
-    case 'tool-searchWeb':
-      return t('searchWeb.title');
-    case 'tool-scrapeUrl':
-      return t('scrapeUrl.title');
-    default:
-      return type;
-  }
-};
-
 export const ToolHeader = ({
   className,
   type,
   state,
   ...props
-}: ToolHeaderProps) => (
-  <CollapsibleTrigger
-    className={cn(
-      'flex w-full min-w-0 items-center justify-between gap-2 p-3',
-      className,
-    )}
-    {...props}
-  >
-    <div className="flex min-w-0 flex-1 items-center gap-2">
-      <ToolIcon type={type} />
-      <span className="truncate font-medium text-sm">{getToolTitle(type)}</span>
-    </div>
-    <div className="flex shrink-0 items-center gap-2">
-      {getStatusBadge(state)}
-      <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-    </div>
-  </CollapsibleTrigger>
-);
+}: ToolHeaderProps) => {
+  const t = useTranslations('Tool');
+
+  const getToolTitle = () => {
+    switch (type) {
+      case 'tool-searchWeb':
+        return t('searchWeb.title');
+      case 'tool-scrapeUrl':
+        return t('scrapeUrl.title');
+      default:
+        return type;
+    }
+  };
+
+  return (
+    <CollapsibleTrigger
+      className={cn(
+        'flex w-full min-w-0 items-center justify-between gap-2 p-3',
+        className,
+      )}
+      {...props}
+    >
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <ToolIcon type={type} />
+        <span className="truncate font-medium text-sm">{getToolTitle()}</span>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {getStatusBadge(state)}
+        <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+      </div>
+    </CollapsibleTrigger>
+  );
+};
 
 export type ToolContentProps = ComponentProps<typeof CollapsibleContent>;
 
