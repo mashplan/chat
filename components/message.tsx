@@ -3,8 +3,9 @@ import type { UseChatHelpers } from '@ai-sdk/react';
 import equal from 'fast-deep-equal';
 import { motion } from 'framer-motion';
 import { memo, useState } from 'react';
+import type { UIMessagePart } from 'ai';
 import type { Vote } from '@/lib/db/schema';
-import type { ChatMessage } from '@/lib/types';
+import type { ChatMessage, ChatTools, CustomUIDataTypes } from '@/lib/types';
 import { cn, sanitizeText } from '@/lib/utils';
 import { useDataStream } from './data-stream-provider';
 import { DocumentToolResult } from './document';
@@ -25,6 +26,50 @@ import { MessageReasoning } from './message-reasoning';
 import { PreviewAttachment } from './preview-attachment';
 import { Weather } from './weather';
 import { CodeBlock } from './elements/code-block';
+
+type MessagePart = UIMessagePart<CustomUIDataTypes, ChatTools>;
+
+type SearchWebOutput = {
+  query?: string;
+  resultCount?: number;
+  results?: Array<{
+    title?: string;
+    url: string;
+    description?: string;
+  }>;
+  summary?: string | null;
+  privacy_notice?: string;
+};
+
+type ScrapeUrlOutput = {
+  url: string;
+  success: boolean;
+  data?: {
+    markdown?: string;
+    html?: string;
+    metadata?: {
+      title: string;
+      description?: string;
+      language?: string | null;
+      sourceURL: string;
+      statusCode?: number | null;
+      ogTitle?: string;
+      ogDescription?: string;
+      ogImage?: string;
+    };
+  };
+  message?: string;
+};
+
+type SearchWebPart = MessagePart & {
+  type: 'tool-searchWeb';
+  output?: SearchWebOutput;
+};
+
+type ScrapeUrlPart = MessagePart & {
+  type: 'tool-scrapeUrl';
+  output?: ScrapeUrlOutput;
+};
 
 const PurePreviewMessage = ({
   chatId,
@@ -399,15 +444,19 @@ const PurePreviewMessage = ({
                     );
                   }
 
-                  if ((part as any).type === 'tool-searchWeb') {
-                    const { toolCallId, state } = part as any;
+                  if (type === 'tool-searchWeb') {
+                    const searchPart = part as SearchWebPart;
+                    const { toolCallId, state } = searchPart;
+                    const output = searchPart.output as
+                      | SearchWebOutput
+                      | undefined;
 
                     return (
                       <Tool key={toolCallId} defaultOpen={true}>
                         <ToolHeader state={state} type="tool-searchWeb" />
                         <ToolContent>
                           {state === 'input-available' && (
-                            <ToolInput input={(part as any).input} />
+                            <ToolInput input={searchPart.input} />
                           )}
                           {state === 'output-error' && (
                             <ToolOutput
@@ -418,83 +467,75 @@ const PurePreviewMessage = ({
                                   </div>
                                   <div className="rounded-md bg-muted/50 p-2 text-xs">
                                     <CodeBlock
-                                      code={String(
-                                        (part as any).errorText || '',
-                                      )}
+                                      code={String(searchPart.errorText || '')}
                                       language="text"
                                     />
                                   </div>
                                 </div>
                               }
-                              errorText={(part as any).errorText}
+                              errorText={searchPart.errorText}
                             />
                           )}
                           {state === 'output-available' && (
                             <ToolOutput
                               output={
                                 <div className="min-w-0 space-y-3">
-                                  {(part as any).output?.summary && (
+                                  {output?.summary && (
                                     <div className="min-w-0 rounded-md bg-muted/50 p-2 text-xs">
                                       <div className="font-medium">Summary</div>
                                       <div className="break-words">
-                                        {(part as any).output.summary}
+                                        {output.summary}
                                       </div>
                                     </div>
                                   )}
                                   <div className="min-w-0 break-words text-muted-foreground text-xs">
                                     Query:{' '}
                                     <span className="break-all font-medium">
-                                      {(part as any).output?.query ??
-                                        (part as any).input?.query}
+                                      {output?.query ?? searchPart.input?.query}
                                     </span>
-                                    {typeof (part as any).output
-                                      ?.resultCount === 'number' && (
+                                    {typeof output?.resultCount ===
+                                      'number' && (
                                       <span>
                                         {' '}
-                                        • Results:{' '}
-                                        {(part as any).output.resultCount}
+                                        • Results: {output.resultCount}
                                       </span>
                                     )}
                                   </div>
-                                  {Array.isArray(
-                                    (part as any).output?.results,
-                                  ) &&
-                                    (part as any).output.results.length > 0 && (
+                                  {Array.isArray(output?.results) &&
+                                    output.results.length > 0 && (
                                       <div className="space-y-2">
-                                        {(part as any).output.results.map(
-                                          (r: any, i: number) => (
-                                            <div
-                                              key={r.url ?? i}
-                                              className="min-w-0 rounded-md border bg-background p-2"
-                                            >
-                                              <div className="min-w-0 break-words font-medium text-xs">
-                                                <a
-                                                  href={r.url}
-                                                  target="_blank"
-                                                  rel="noreferrer"
-                                                  className="break-all underline"
-                                                >
-                                                  {r.title || r.url}
-                                                </a>
-                                              </div>
-                                              {r.description && (
-                                                <div className="mt-1 line-clamp-3 break-words text-muted-foreground text-xs">
-                                                  {r.description}
-                                                </div>
-                                              )}
+                                        {output.results.map((r, i) => (
+                                          <div
+                                            key={r.url ?? i}
+                                            className="min-w-0 rounded-md border bg-background p-2"
+                                          >
+                                            <div className="min-w-0 break-words font-medium text-xs">
+                                              <a
+                                                href={r.url}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="break-all underline"
+                                              >
+                                                {r.title || r.url}
+                                              </a>
                                             </div>
-                                          ),
-                                        )}
+                                            {r.description && (
+                                              <div className="mt-1 line-clamp-3 break-words text-muted-foreground text-xs">
+                                                {r.description}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
                                       </div>
                                     )}
-                                  {(part as any).output?.privacy_notice && (
+                                  {output?.privacy_notice && (
                                     <div className="text-[10px] text-muted-foreground">
-                                      {(part as any).output.privacy_notice}
+                                      {output.privacy_notice}
                                     </div>
                                   )}
                                 </div>
                               }
-                              errorText={(part as any).errorText}
+                              errorText={searchPart.errorText}
                             />
                           )}
                         </ToolContent>
@@ -502,15 +543,19 @@ const PurePreviewMessage = ({
                     );
                   }
 
-                  if ((part as any).type === 'tool-scrapeUrl') {
-                    const { toolCallId, state } = part as any;
+                  if (type === 'tool-scrapeUrl') {
+                    const scrapePart = part as ScrapeUrlPart;
+                    const { toolCallId, state } = scrapePart;
+                    const output = scrapePart.output as
+                      | ScrapeUrlOutput
+                      | undefined;
 
                     return (
                       <Tool key={toolCallId} defaultOpen={true}>
                         <ToolHeader state={state} type="tool-scrapeUrl" />
                         <ToolContent>
                           {state === 'input-available' && (
-                            <ToolInput input={(part as any).input} />
+                            <ToolInput input={scrapePart.input} />
                           )}
                           {state === 'output-error' && (
                             <ToolOutput
@@ -521,15 +566,13 @@ const PurePreviewMessage = ({
                                   </div>
                                   <div className="rounded-md bg-muted/50 p-2 text-xs">
                                     <CodeBlock
-                                      code={String(
-                                        (part as any).errorText || '',
-                                      )}
+                                      code={String(scrapePart.errorText || '')}
                                       language="text"
                                     />
                                   </div>
                                 </div>
                               }
-                              errorText={(part as any).errorText}
+                              errorText={scrapePart.errorText}
                             />
                           )}
                           {state === 'output-available' && (
@@ -539,56 +582,46 @@ const PurePreviewMessage = ({
                                   <div className="min-w-0 break-words text-muted-foreground text-xs">
                                     Scraped:{' '}
                                     <span className="break-all font-medium">
-                                      {(part as any).output?.url ||
-                                        (part as any).input?.url}
+                                      {output?.url || scrapePart.input?.url}
                                     </span>
                                   </div>
-                                  {(part as any).output?.data?.metadata && (
+                                  {output?.data?.metadata && (
                                     <div className="min-w-0 rounded-md border bg-background p-2 text-xs">
                                       <div className="font-medium">
                                         Metadata
                                       </div>
                                       <div className="mt-1 grid grid-cols-1 gap-1 sm:grid-cols-2">
                                         <div className="min-w-0 break-words">
-                                          Title:{' '}
-                                          {
-                                            (part as any).output.data.metadata
-                                              .title
-                                          }
+                                          Title: {output.data.metadata.title}
                                         </div>
                                         <div className="min-w-0 break-words">
                                           Language:{' '}
-                                          {(part as any).output.data.metadata
-                                            .language || 'n/a'}
+                                          {output.data.metadata.language ||
+                                            'n/a'}
                                         </div>
                                         <div className="min-w-0 break-words">
                                           Status:{' '}
                                           {String(
-                                            (part as any).output.data.metadata
-                                              .statusCode ?? 'n/a',
+                                            output.data.metadata.statusCode ??
+                                              'n/a',
                                           )}
                                         </div>
                                         <div className="min-w-0 break-words">
                                           Source:{' '}
                                           <span className="break-all">
-                                            {
-                                              (part as any).output.data.metadata
-                                                .sourceURL
-                                            }
+                                            {output.data.metadata.sourceURL}
                                           </span>
                                         </div>
                                       </div>
                                     </div>
                                   )}
-                                  {(part as any).output?.data?.markdown && (
+                                  {output?.data?.markdown && (
                                     <div className="min-w-0 max-w-full rounded-md bg-muted/50 p-2 text-xs">
                                       <div className="font-medium">
                                         Markdown (preview)
                                       </div>
                                       <div className="mt-1 line-clamp-6 max-w-full whitespace-pre-wrap break-all [&_a]:break-all [&_a]:underline">
-                                        {(
-                                          part as any
-                                        ).output.data.markdown.slice(0, 2000)}
+                                        {output.data.markdown.slice(0, 2000)}
                                       </div>
                                     </div>
                                   )}
@@ -598,18 +631,14 @@ const PurePreviewMessage = ({
                                     </summary>
                                     <div className="mt-2 min-w-0 max-w-full overflow-hidden">
                                       <CodeBlock
-                                        code={JSON.stringify(
-                                          (part as any).output,
-                                          null,
-                                          2,
-                                        )}
+                                        code={JSON.stringify(output, null, 2)}
                                         language="json"
                                       />
                                     </div>
                                   </details>
                                 </div>
                               }
-                              errorText={(part as any).errorText}
+                              errorText={scrapePart.errorText}
                             />
                           )}
                         </ToolContent>
