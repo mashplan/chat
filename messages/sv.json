@@ -15,6 +15,7 @@
     "assistant": "Assistent",
     "apply": "Använd",
     "thinking": "Tänker...",
+    "thought": "Tänkte",
     "thoughtForSeconds": "Tänkte i {duration} sekunder"
   },
   "App": {

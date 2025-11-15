@@ -247,7 +247,7 @@ const PurePreviewMessage = ({
                     );
                   }
 
-                  if (type === 'text') {
+                  if (type === 'text' && part.text?.trim().length > 0) {
                     if (mode === 'view') {
                       return (
                         <div key={key}>
@@ -432,16 +432,18 @@ const PurePreviewMessage = ({
                           {state === 'output-available' && (
                             <ToolOutput
                               output={
-                                <div className="space-y-3">
+                                <div className="min-w-0 space-y-3">
                                   {(part as any).output?.summary && (
-                                    <div className="rounded-md bg-muted/50 p-2 text-xs">
+                                    <div className="min-w-0 rounded-md bg-muted/50 p-2 text-xs">
                                       <div className="font-medium">Summary</div>
-                                      <div>{(part as any).output.summary}</div>
+                                      <div className="break-words">
+                                        {(part as any).output.summary}
+                                      </div>
                                     </div>
                                   )}
-                                  <div className="text-muted-foreground text-xs">
+                                  <div className="min-w-0 break-words text-muted-foreground text-xs">
                                     Query:{' '}
-                                    <span className="font-medium">
+                                    <span className="break-all font-medium">
                                       {(part as any).output?.query ??
                                         (part as any).input?.query}
                                     </span>
@@ -463,20 +465,20 @@ const PurePreviewMessage = ({
                                           (r: any, i: number) => (
                                             <div
                                               key={r.url ?? i}
-                                              className="rounded-md border bg-background p-2"
+                                              className="min-w-0 rounded-md border bg-background p-2"
                                             >
-                                              <div className="truncate font-medium text-xs">
+                                              <div className="min-w-0 break-words font-medium text-xs">
                                                 <a
                                                   href={r.url}
                                                   target="_blank"
                                                   rel="noreferrer"
-                                                  className="underline"
+                                                  className="break-all underline"
                                                 >
                                                   {r.title || r.url}
                                                 </a>
                                               </div>
                                               {r.description && (
-                                                <div className="mt-1 line-clamp-3 text-muted-foreground text-xs">
+                                                <div className="mt-1 line-clamp-3 break-words text-muted-foreground text-xs">
                                                   {r.description}
                                                 </div>
                                               )}
@@ -533,66 +535,68 @@ const PurePreviewMessage = ({
                           {state === 'output-available' && (
                             <ToolOutput
                               output={
-                                <div className="space-y-3">
-                                  <div className="text-muted-foreground text-xs">
+                                <div className="min-w-0 space-y-3">
+                                  <div className="min-w-0 break-words text-muted-foreground text-xs">
                                     Scraped:{' '}
-                                    <span className="font-medium">
+                                    <span className="break-all font-medium">
                                       {(part as any).output?.url ||
                                         (part as any).input?.url}
                                     </span>
                                   </div>
                                   {(part as any).output?.data?.metadata && (
-                                    <div className="rounded-md border bg-background p-2 text-xs">
+                                    <div className="min-w-0 rounded-md border bg-background p-2 text-xs">
                                       <div className="font-medium">
                                         Metadata
                                       </div>
                                       <div className="mt-1 grid grid-cols-1 gap-1 sm:grid-cols-2">
-                                        <div>
+                                        <div className="min-w-0 break-words">
                                           Title:{' '}
                                           {
                                             (part as any).output.data.metadata
                                               .title
                                           }
                                         </div>
-                                        <div>
+                                        <div className="min-w-0 break-words">
                                           Language:{' '}
                                           {(part as any).output.data.metadata
                                             .language || 'n/a'}
                                         </div>
-                                        <div>
+                                        <div className="min-w-0 break-words">
                                           Status:{' '}
                                           {String(
                                             (part as any).output.data.metadata
                                               .statusCode ?? 'n/a',
                                           )}
                                         </div>
-                                        <div>
+                                        <div className="min-w-0 break-words">
                                           Source:{' '}
-                                          {
-                                            (part as any).output.data.metadata
-                                              .sourceURL
-                                          }
+                                          <span className="break-all">
+                                            {
+                                              (part as any).output.data.metadata
+                                                .sourceURL
+                                            }
+                                          </span>
                                         </div>
                                       </div>
                                     </div>
                                   )}
                                   {(part as any).output?.data?.markdown && (
-                                    <div className="rounded-md bg-muted/50 p-2 text-xs">
+                                    <div className="min-w-0 max-w-full rounded-md bg-muted/50 p-2 text-xs">
                                       <div className="font-medium">
                                         Markdown (preview)
                                       </div>
-                                      <div className="mt-1 line-clamp-6 whitespace-pre-wrap">
+                                      <div className="mt-1 line-clamp-6 max-w-full whitespace-pre-wrap break-all [&_a]:break-all [&_a]:underline">
                                         {(
                                           part as any
                                         ).output.data.markdown.slice(0, 2000)}
                                       </div>
                                     </div>
                                   )}
-                                  <details className="rounded-md border p-2 text-xs">
+                                  <details className="min-w-0 max-w-full overflow-hidden rounded-md border p-2 text-xs">
                                     <summary className="cursor-pointer select-none font-medium">
                                       Raw JSON
                                     </summary>
-                                    <div className="mt-2">
+                                    <div className="mt-2 min-w-0 max-w-full overflow-hidden">
                                       <CodeBlock
                                         code={JSON.stringify(
                                           (part as any).output,
