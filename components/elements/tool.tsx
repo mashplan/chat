@@ -14,18 +14,21 @@ import {
   CircleIcon,
   ClockIcon,
   Loader2Icon,
+  ScanTextIcon,
+  TextSearchIcon,
   WrenchIcon,
   XCircleIcon,
 } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import React from 'react';
 import { CodeBlock } from './code-block';
+import { useTranslations } from 'next-intl';
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
 
 export const Tool = ({ className, ...props }: ToolProps) => (
   <Collapsible
-    className={cn('not-prose mb-4 w-full rounded-md border', className)}
+    className={cn('not-prose mb-4 w-full min-w-0 rounded-md border', className)}
     {...props}
   />
 );
@@ -70,36 +73,70 @@ const getStatusBadge = (status: ToolUIPart['state']) => {
   );
 };
 
+const ToolIcon = ({ type }: { type: ToolUIPart['type'] }) => {
+  const generalClasses = 'size-5 shrink-0 text-muted-foreground';
+  const strokeWidth = 1.5;
+  switch (type) {
+    case 'tool-searchWeb':
+      return (
+        <TextSearchIcon className={generalClasses} strokeWidth={strokeWidth} />
+      );
+    case 'tool-scrapeUrl':
+      return (
+        <ScanTextIcon className={generalClasses} strokeWidth={strokeWidth} />
+      );
+    default:
+      return (
+        <WrenchIcon className={generalClasses} strokeWidth={strokeWidth} />
+      );
+  }
+};
+
 export const ToolHeader = ({
   className,
   type,
   state,
   ...props
-}: ToolHeaderProps) => (
-  <CollapsibleTrigger
-    className={cn(
-      'flex w-full min-w-0 items-center justify-between gap-2 p-3',
-      className,
-    )}
-    {...props}
-  >
-    <div className="flex min-w-0 flex-1 items-center gap-2">
-      <WrenchIcon className="size-4 shrink-0 text-muted-foreground" />
-      <span className="truncate font-medium text-sm">{type}</span>
-    </div>
-    <div className="flex shrink-0 items-center gap-2">
-      {getStatusBadge(state)}
-      <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-    </div>
-  </CollapsibleTrigger>
-);
+}: ToolHeaderProps) => {
+  const t = useTranslations('Tool');
+
+  const getToolTitle = () => {
+    switch (type) {
+      case 'tool-searchWeb':
+        return t('searchWeb.title');
+      case 'tool-scrapeUrl':
+        return t('scrapeUrl.title');
+      default:
+        return type;
+    }
+  };
+
+  return (
+    <CollapsibleTrigger
+      className={cn(
+        'flex w-full min-w-0 items-center justify-between gap-2 p-3',
+        className,
+      )}
+      {...props}
+    >
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <ToolIcon type={type} />
+        <span className="truncate font-medium text-sm">{getToolTitle()}</span>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {getStatusBadge(state)}
+        <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+      </div>
+    </CollapsibleTrigger>
+  );
+};
 
 export type ToolContentProps = ComponentProps<typeof CollapsibleContent>;
 
 export const ToolContent = ({ className, ...props }: ToolContentProps) => (
   <CollapsibleContent
     className={cn(
-      'data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 w-full overflow-hidden text-popover-foreground outline-hidden data-[state=closed]:animate-out data-[state=open]:animate-in',
+      'data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 w-full min-w-0 overflow-hidden text-popover-foreground outline-hidden data-[state=closed]:animate-out data-[state=open]:animate-in',
       className,
     )}
     {...props}
@@ -111,11 +148,14 @@ export type ToolInputProps = ComponentProps<'div'> & {
 };
 
 export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
-  <div className={cn('space-y-2 overflow-hidden p-4', className)} {...props}>
+  <div
+    className={cn('min-w-0 space-y-2 overflow-hidden p-4', className)}
+    {...props}
+  >
     <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
       Parameters
     </h4>
-    <div className="rounded-md bg-muted/50">
+    <div className="min-w-0 rounded-md bg-muted/50">
       <CodeBlock code={JSON.stringify(input, null, 2)} language="json" />
     </div>
   </div>
@@ -135,22 +175,25 @@ export const ToolOutput = ({
   if (!(output || errorText)) {
     return null;
   }
-
+  const t = useTranslations('Tool');
   return (
-    <div className={cn('space-y-2 p-4', className)} {...props}>
+    <div
+      className={cn('min-w-0 max-w-full space-y-2 p-4', className)}
+      {...props}
+    >
       <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-        {errorText ? 'Error' : 'Result'}
+        {errorText ? t('error') : t('result')}
       </h4>
       <div
         className={cn(
-          'overflow-x-auto rounded-md text-xs [&_table]:w-full',
+          'min-w-0 max-w-full overflow-x-auto rounded-md text-xs [&_table]:w-full',
           errorText
             ? 'bg-destructive/10 text-destructive'
             : 'bg-muted/50 text-foreground',
         )}
       >
-        {errorText && <div>{errorText}</div>}
-        {output && <div>{output}</div>}
+        {errorText && <div className="break-words">{errorText}</div>}
+        {output && <div className="min-w-0 max-w-full">{output}</div>}
       </div>
     </div>
   );

@@ -15,6 +15,7 @@
     "assistant": "Assistent",
     "apply": "Använd",
     "thinking": "Tänker...",
+    "thought": "Tänkte",
     "thoughtForSeconds": "Tänkte i {duration} sekunder"
   },
   "App": {
@@ -98,5 +99,24 @@
   },
   "Message": {
     "thinking": "Tänker..."
+  },
+  "Tool": {
+    "error": "Fel",
+    "result": "Resultat",
+    "searchWeb": {
+      "title": "Söker på webben efter mer information",
+      "summary": "Sammanfattning",
+      "query": "Sökfråga"
+    },
+    "scrapeUrl": {
+      "title": "Läser in webbsida",
+      "scraped": "Läst in",
+      "metadata": "Metadata",
+      "outputTitle": "Titel",
+      "language": "Språk",
+      "statusCode": "Statuskod",
+      "sourceURL": "Käll-URL",
+      "markdown": "Markdown (förhandsvisning)"
+    }
   }
 }

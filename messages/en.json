@@ -15,6 +15,7 @@
     "assistant": "Assistant",
     "apply": "Apply",
     "thinking": "Thinking...",
+    "thought": "Thought",
     "thoughtForSeconds": "Thought for {duration}s"
   },
   "App": {
@@ -98,5 +99,24 @@
   },
   "Message": {
     "thinking": "Thinking..."
+  },
+  "Tool": {
+    "error": "Error",
+    "result": "Result",
+    "searchWeb": {
+      "title": "Searching the web for more information",
+      "summary": "Summary",
+      "query": "Search query"
+    },
+    "scrapeUrl": {
+      "title": "Scraping the URL",
+      "scraped": "Scraped",
+      "metadata": "Metadata",
+      "outputTitle": "Title",
+      "language": "Language",
+      "statusCode": "Status Code",
+      "sourceURL": "Source URL",
+      "markdown": "Markdown (preview)"
+    }
   }
 }

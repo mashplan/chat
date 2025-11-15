@@ -16,6 +16,9 @@
   "[typescriptreact]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
+  "[css]": {
+    "editor.formatOnSave": false
+  },
   "typescript.tsdk": "node_modules/typescript/lib",
   "eslint.workingDirectories": [
     { "pattern": "app/*" },

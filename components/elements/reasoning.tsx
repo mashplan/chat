@@ -66,16 +66,31 @@ export const Reasoning = memo(
     const [startTime, setStartTime] = useState<number | null>(null);
 
     // Track duration when streaming starts and ends
+    // Only calculate duration if no durationProp is provided (for new messages)
     useEffect(() => {
+      // If durationProp is provided, don't calculate - use the prop value
+      if (durationProp !== undefined) {
+        return;
+      }
+
       if (isStreaming) {
+        // Start tracking time when streaming begins
         if (startTime === null) {
           setStartTime(Date.now());
         }
-      } else if (startTime !== null) {
-        setDuration(Math.round((Date.now() - startTime) / MS_IN_S));
-        setStartTime(null);
+      } else {
+        // When streaming ends, calculate duration if we have a start time
+        if (startTime !== null) {
+          const calculatedDuration = Math.round(
+            (Date.now() - startTime) / MS_IN_S,
+          );
+          // Update duration (even if 0, as it might be a very fast stream)
+          // The UI will handle showing "Thinking..." if duration is 0
+          setDuration(calculatedDuration);
+          setStartTime(null);
+        }
       }
-    }, [isStreaming, startTime, setDuration]);
+    }, [isStreaming, startTime, setDuration, durationProp]);
 
     // Auto-open when streaming starts, auto-close when streaming ends (once only)
     useEffect(() => {
@@ -117,21 +132,27 @@ export const ReasoningTrigger = memo(
   ({ className, children, ...props }: ReasoningTriggerProps) => {
     const { isStreaming, isOpen, duration } = useReasoning();
     const t = useTranslations('Common');
+
     return (
       <CollapsibleTrigger
         className={cn(
-          'flex items-center gap-1.5 text-muted-foreground text-xs transition-colors hover:text-foreground',
+          'mb-2 flex items-center gap-1.5 text-muted-foreground text-sm transition-colors hover:text-foreground',
           className,
         )}
         {...props}
       >
         {children ?? (
           <>
-            <BrainIcon className="size-4" />
-            {isStreaming || duration === 0 ? (
+            <BrainIcon
+              className={cn('size-5', isStreaming && 'animate-pulse')}
+              strokeWidth={1.5}
+            />
+            {isStreaming ? (
               <p>{t('thinking')}</p>
-            ) : (
+            ) : duration > 0 ? (
               <p>{t('thoughtForSeconds', { duration })}</p>
+            ) : (
+              <p>{t('thought')}</p>
             )}
             <ChevronDownIcon
               className={cn(
@@ -156,7 +177,7 @@ export const ReasoningContent = memo(
   ({ className, children, ...props }: ReasoningContentProps) => (
     <CollapsibleContent
       className={cn(
-        'mt-2 text-muted-foreground text-xs',
+        'mb-4 text-muted-foreground text-sm',
         'data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 outline-hidden data-[state=closed]:animate-out data-[state=open]:animate-in',
         className,
       )}
