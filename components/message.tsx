@@ -500,7 +500,7 @@ const PurePreviewMessage = ({
                                       'number' && (
                                       <span>
                                         {' '}
-                                        • {t('results')}: {output.resultCount}
+                                        • {t('result')}: {output.resultCount}
                                       </span>
                                     )}
                                   </div>
