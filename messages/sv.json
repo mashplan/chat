@@ -99,5 +99,10 @@
   },
   "Message": {
     "thinking": "Tänker..."
+  },
+  "Tool": {
+    "title": {
+      "searchWeb": "Söker på webben efter mer information"
+    }
   }
 }

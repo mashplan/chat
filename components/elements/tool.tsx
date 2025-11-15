@@ -14,12 +14,14 @@ import {
   CircleIcon,
   ClockIcon,
   Loader2Icon,
+  TextSearchIcon,
   WrenchIcon,
   XCircleIcon,
 } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import React from 'react';
 import { CodeBlock } from './code-block';
+import { useTranslations } from 'next-intl';
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
 
@@ -70,6 +72,31 @@ const getStatusBadge = (status: ToolUIPart['state']) => {
   );
 };
 
+const ToolIcon = ({ type }: { type: ToolUIPart['type'] }) => {
+  const generalClasses = 'size-5 shrink-0 text-muted-foreground';
+  const strokeWidth = 1.5;
+  switch (type) {
+    case 'tool-searchWeb':
+      return (
+        <TextSearchIcon className={generalClasses} strokeWidth={strokeWidth} />
+      );
+    default:
+      return (
+        <WrenchIcon className={generalClasses} strokeWidth={strokeWidth} />
+      );
+  }
+};
+
+const getToolTitle = (type: ToolUIPart['type']) => {
+  const t = useTranslations('Tool');
+  switch (type) {
+    case 'tool-searchWeb':
+      return t('title.searchWeb');
+    default:
+      return type;
+  }
+};
+
 export const ToolHeader = ({
   className,
   type,
@@ -84,8 +111,8 @@ export const ToolHeader = ({
     {...props}
   >
     <div className="flex min-w-0 flex-1 items-center gap-2">
-      <WrenchIcon className="size-4 shrink-0 text-muted-foreground" />
-      <span className="truncate font-medium text-sm">{type}</span>
+      <ToolIcon type={type} />
+      <span className="truncate font-medium text-sm">{getToolTitle(type)}</span>
     </div>
     <div className="flex shrink-0 items-center gap-2">
       {getStatusBadge(state)}
