@@ -114,3 +114,19 @@ export function getTextFromMessage(message: ChatMessage): string {
     .map((part) => part.text)
     .join('');
 }
+
+export function buildTruncatedTitleFromMessage(message: UIMessage): string {
+  try {
+    const raw = getTextFromMessage(message as any) || '';
+    const sanitized = raw
+      .replace(/["'""'']/g, '')
+      .replace(/[:]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const fallback = sanitized || 'New chat';
+    // Truncate to 30 characters for initial title
+    return fallback.length <= 30 ? fallback : `${fallback.slice(0, 30)}...`;
+  } catch {
+    return 'New chat';
+  }
+}

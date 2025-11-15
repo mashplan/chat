@@ -20,8 +20,11 @@ import {
   saveMessages,
 } from '@/lib/db/queries';
 import { updateChatLastContextById } from '@/lib/db/queries';
-import { convertToUIMessages, generateUUID } from '@/lib/utils';
-import { generateTitleFromUserMessage } from '../../actions';
+import {
+  convertToUIMessages,
+  generateUUID,
+  buildTruncatedTitleFromMessage,
+} from '@/lib/utils';
 import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
@@ -197,9 +200,7 @@ export async function POST(request: Request) {
     const chat = await getChatById({ id });
 
     if (!chat) {
-      const title = await generateTitleFromUserMessage({
-        message,
-      });
+      const title = buildTruncatedTitleFromMessage(message);
 
       await saveChat({
         id,
