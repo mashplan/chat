@@ -101,8 +101,22 @@
     "thinking": "Tänker..."
   },
   "Tool": {
-    "title": {
-      "searchWeb": "Söker på webben efter mer information"
+    "error": "Fel",
+    "result": "Resultat",
+    "searchWeb": {
+      "title": "Söker på webben efter mer information",
+      "summary": "Sammanfattning",
+      "query": "Sökfråga"
+    },
+    "scrapeUrl": {
+      "title": "Läser in webbsida",
+      "scraped": "Läst in",
+      "metadata": "Metadata",
+      "outputTitle": "Titel",
+      "language": "Språk",
+      "statusCode": "Statuskod",
+      "sourceURL": "Käll-URL",
+      "markdown": "Markdown (förhandsvisning)"
     }
   }
 }

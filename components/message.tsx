@@ -26,6 +26,7 @@ import { MessageReasoning } from './message-reasoning';
 import { PreviewAttachment } from './preview-attachment';
 import { Weather } from './weather';
 import { CodeBlock } from './elements/code-block';
+import { useTranslations } from 'next-intl';
 
 type MessagePart = UIMessagePart<CustomUIDataTypes, ChatTools>;
 
@@ -450,7 +451,7 @@ const PurePreviewMessage = ({
                     const output = searchPart.output as
                       | SearchWebOutput
                       | undefined;
-
+                    const t = useTranslations('Tool');
                     return (
                       <Tool key={toolCallId} defaultOpen={true}>
                         <ToolHeader state={state} type="tool-searchWeb" />
@@ -479,17 +480,19 @@ const PurePreviewMessage = ({
                           {state === 'output-available' && (
                             <ToolOutput
                               output={
-                                <div className="min-w-0 space-y-3">
+                                <div className="min-w-0 space-y-3 p-2">
                                   {output?.summary && (
                                     <div className="min-w-0 rounded-md bg-muted/50 p-2 text-xs">
-                                      <div className="font-medium">Summary</div>
+                                      <div className="font-medium">
+                                        {t('searchWeb.summary')}
+                                      </div>
                                       <div className="break-words">
                                         {output.summary}
                                       </div>
                                     </div>
                                   )}
                                   <div className="min-w-0 break-words text-muted-foreground text-xs">
-                                    Query:{' '}
+                                    {t('searchWeb.query')}:{' '}
                                     <span className="break-all font-medium">
                                       {output?.query ?? searchPart.input?.query}
                                     </span>
@@ -497,7 +500,7 @@ const PurePreviewMessage = ({
                                       'number' && (
                                       <span>
                                         {' '}
-                                        • Results: {output.resultCount}
+                                        • {t('results')}: {output.resultCount}
                                       </span>
                                     )}
                                   </div>
@@ -549,7 +552,7 @@ const PurePreviewMessage = ({
                     const output = scrapePart.output as
                       | ScrapeUrlOutput
                       | undefined;
-
+                    const t = useTranslations('Tool');
                     return (
                       <Tool key={toolCallId} defaultOpen={true}>
                         <ToolHeader state={state} type="tool-scrapeUrl" />
@@ -580,7 +583,7 @@ const PurePreviewMessage = ({
                               output={
                                 <div className="min-w-0 space-y-3">
                                   <div className="min-w-0 break-words text-muted-foreground text-xs">
-                                    Scraped:{' '}
+                                    {t('scrapeUrl.scraped')}:{' '}
                                     <span className="break-all font-medium">
                                       {output?.url || scrapePart.input?.url}
                                     </span>
@@ -588,26 +591,27 @@ const PurePreviewMessage = ({
                                   {output?.data?.metadata && (
                                     <div className="min-w-0 rounded-md border bg-background p-2 text-xs">
                                       <div className="font-medium">
-                                        Metadata
+                                        {t('scrapeUrl.metadata')}
                                       </div>
                                       <div className="mt-1 grid grid-cols-1 gap-1 sm:grid-cols-2">
                                         <div className="min-w-0 break-words">
-                                          Title: {output.data.metadata.title}
+                                          {t('scrapeUrl.outputTitle')}:{' '}
+                                          {output.data.metadata.title}
                                         </div>
                                         <div className="min-w-0 break-words">
-                                          Language:{' '}
+                                          {t('scrapeUrl.language')}:{' '}
                                           {output.data.metadata.language ||
                                             'n/a'}
                                         </div>
                                         <div className="min-w-0 break-words">
-                                          Status:{' '}
+                                          {t('scrapeUrl.statusCode')}:{' '}
                                           {String(
                                             output.data.metadata.statusCode ??
                                               'n/a',
                                           )}
                                         </div>
                                         <div className="min-w-0 break-words">
-                                          Source:{' '}
+                                          {t('scrapeUrl.sourceURL')}:{' '}
                                           <span className="break-all">
                                             {output.data.metadata.sourceURL}
                                           </span>
@@ -618,7 +622,7 @@ const PurePreviewMessage = ({
                                   {output?.data?.markdown && (
                                     <div className="min-w-0 max-w-full rounded-md bg-muted/50 p-2 text-xs">
                                       <div className="font-medium">
-                                        Markdown (preview)
+                                        {t('scrapeUrl.markdown')}
                                       </div>
                                       <div className="mt-1 line-clamp-6 max-w-full whitespace-pre-wrap break-all [&_a]:break-all [&_a]:underline">
                                         {output.data.markdown.slice(0, 2000)}

@@ -14,6 +14,7 @@ import {
   CircleIcon,
   ClockIcon,
   Loader2Icon,
+  ScanTextIcon,
   TextSearchIcon,
   WrenchIcon,
   XCircleIcon,
@@ -80,6 +81,10 @@ const ToolIcon = ({ type }: { type: ToolUIPart['type'] }) => {
       return (
         <TextSearchIcon className={generalClasses} strokeWidth={strokeWidth} />
       );
+    case 'tool-scrapeUrl':
+      return (
+        <ScanTextIcon className={generalClasses} strokeWidth={strokeWidth} />
+      );
     default:
       return (
         <WrenchIcon className={generalClasses} strokeWidth={strokeWidth} />
@@ -91,7 +96,9 @@ const getToolTitle = (type: ToolUIPart['type']) => {
   const t = useTranslations('Tool');
   switch (type) {
     case 'tool-searchWeb':
-      return t('title.searchWeb');
+      return t('searchWeb.title');
+    case 'tool-scrapeUrl':
+      return t('scrapeUrl.title');
     default:
       return type;
   }
@@ -165,14 +172,14 @@ export const ToolOutput = ({
   if (!(output || errorText)) {
     return null;
   }
-
+  const t = useTranslations('Tool');
   return (
     <div
       className={cn('min-w-0 max-w-full space-y-2 p-4', className)}
       {...props}
     >
       <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-        {errorText ? 'Error' : 'Result'}
+        {errorText ? t('error') : t('result')}
       </h4>
       <div
         className={cn(
