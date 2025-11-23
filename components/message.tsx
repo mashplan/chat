@@ -241,17 +241,12 @@ const PurePreviewMessage = ({
                               <div key={key}>
                                 <MessageContent
                                   className={cn({
-                                    'w-fit break-words rounded-2xl px-3 py-2 text-right text-white':
+                                    'w-fit break-words rounded-2xl px-6 py-5 bg-stone-200 text-stone-900':
                                       message.role === 'user',
                                     'bg-transparent px-0 py-0 text-left':
                                       message.role === 'assistant',
                                   })}
                                   data-testid="message-content"
-                                  style={
-                                    message.role === 'user'
-                                      ? { backgroundColor: '#006cff' }
-                                      : undefined
-                                  }
                                 >
                                   <Response>{sanitizeText(part.text)}</Response>
                                 </MessageContent>
@@ -300,17 +295,12 @@ const PurePreviewMessage = ({
                         <div key={key}>
                           <MessageContent
                             className={cn({
-                              'w-fit break-words rounded-2xl px-3 py-2 text-right text-white':
+                              'w-fit break-words rounded-xl px-6 py-5 bg-stone-200 text-stone-900':
                                 message.role === 'user',
                               'bg-transparent px-0 py-0 text-left':
                                 message.role === 'assistant',
                             })}
                             data-testid="message-content"
-                            style={
-                              message.role === 'user'
-                                ? { backgroundColor: '#006cff' }
-                                : undefined
-                            }
                           >
                             <Response>{sanitizeText(part.text)}</Response>
                           </MessageContent>
