@@ -124,8 +124,8 @@ export function buildTruncatedTitleFromMessage(message: UIMessage): string {
       .replace(/\s+/g, ' ')
       .trim();
     const fallback = sanitized || 'New chat';
-    // Truncate to 30 characters for initial title
-    return fallback.length <= 30 ? fallback : `${fallback.slice(0, 30)}...`;
+    // Truncate to 80 characters to match AI model instruction
+    return fallback.length <= 80 ? fallback : `${fallback.slice(0, 77)}...`;
   } catch {
     return 'New chat';
   }
