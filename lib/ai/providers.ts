@@ -72,10 +72,16 @@ export const myProvider = isTestEnvironment
           middleware: extractReasoningMiddleware({ tagName: 'think' }),
         }),
         'title-model': withDebug(
-          bergetAiProvider('mistralai/Magistral-Small-2506') as any,
-          'berget-ai:mistralai/Magistral-Small-2506',
+          bergetAiProvider('meta-llama/Llama-3.1-8B-Instruct') as any,
+          'berget-ai:meta-llama/Llama-3.1-8B-Instruct',
         ),
-        'artifact-model': anthropic('claude-sonnet-4-20250514') as any,
+        'artifact-model': withDebug(
+          wrapLanguageModel({
+            model: bergetAiProvider('openai/gpt-oss-120b') as any,
+            middleware: extractReasoningMiddleware({ tagName: 'think' }),
+          }),
+          'berget-ai:openai/gpt-oss-120b',
+        ),
         // Berget AI models
         'deepseek-r1': withDebug(
           wrapLanguageModel({
