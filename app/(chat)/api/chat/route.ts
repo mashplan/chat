@@ -20,11 +20,7 @@ import {
   saveMessages,
 } from '@/lib/db/queries';
 import { updateChatLastContextById } from '@/lib/db/queries';
-import {
-  convertToUIMessages,
-  generateUUID,
-  buildTruncatedTitleFromMessage,
-} from '@/lib/utils';
+import { convertToUIMessages, generateUUID } from '@/lib/utils';
 import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
@@ -51,6 +47,7 @@ import { ChatSDKError } from '@/lib/errors';
 import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
+import { generateTitleFromUserMessage } from '@/app/(chat)/actions';
 
 export const maxDuration = 60;
 
@@ -200,7 +197,10 @@ export async function POST(request: Request) {
     const chat = await getChatById({ id });
 
     if (!chat) {
-      const title = buildTruncatedTitleFromMessage(message);
+      const title = await generateTitleFromUserMessage({
+        message,
+      });
+      // const title = buildTruncatedTitleFromMessage(message);
 
       await saveChat({
         id,
